@@ -6,8 +6,6 @@
 //
 
 import NIOCore
-import Network
-
 
 public enum PubSub {
     /// ValidationResult represents the decision of an extended validator
