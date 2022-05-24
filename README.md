@@ -3,6 +3,7 @@
 [![](https://img.shields.io/badge/made%20by-Breth-blue.svg?style=flat-square)](https://breth.app)
 [![](https://img.shields.io/badge/project-libp2p-yellow.svg?style=flat-square)](http://libp2p.io/)
 [![Swift Package Manager compatible](https://img.shields.io/badge/SPM-compatible-blue.svg?style=flat-square)](https://github.com/apple/swift-package-manager)
+![Build & Test (macos and linux)](https://github.com/swift-libp2p/swift-libp2p-core/actions/workflows/build+test.yml/badge.svg)
 
 > The core LibP2P Interfaces / Protocols and Abstractions backing the swift-libp2p project
 
