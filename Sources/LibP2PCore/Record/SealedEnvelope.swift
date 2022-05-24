@@ -115,7 +115,7 @@ public final class SealedEnvelope:Envelope {
             //print("Looks like we have a PeerRecord as our underlying Record Type. Attempting to unmarshal and verify signature")
             let pRec = try PeerRecord(marshaledData: Data(self.rawPayload))
             //print("Unmarshaled PeerRecord successfully, proceeding with signature verification")
-            return try publicKey.verfiy(Data(self.signature), for: Data(pRec.unsignedPayload()))
+            return try publicKey.verify(signature: Data(self.signature), for: Data(pRec.unsignedPayload()))
        
         default:
             throw Errors.emptyPayloadType
