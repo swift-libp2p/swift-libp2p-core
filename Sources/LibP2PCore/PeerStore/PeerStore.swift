@@ -28,6 +28,20 @@ public protocol PeerStore:KeyRepository, AddressRepository, ProtocolRepository, 
     func dumpAll()
 }
 
+public extension PeerStore {
+    
+    /// Given a `PeerInfo` object this method adds both the `PeerID` and the associated `Multiaddr`s to the `PeerStore`.
+    /// - Parameters:
+    ///   - peerInfo: the `PeerInfo` object to store
+    ///   - on: An optional `EventLoop` to return on
+    /// - Returns: `Void` upon success, or error upon failure
+    func add(peerInfo:PeerInfo, on:EventLoop? = nil) -> EventLoopFuture<Void> {
+        self.add(key: peerInfo.peer, on: on).flatMap {
+            self.add(addresses: peerInfo.addresses, toPeer: peerInfo.peer, on: on)
+        }
+    }
+}
+
 public protocol RecordRepository {
     func add(record:PeerRecord, on:EventLoop?) -> EventLoopFuture<Void>
     func getRecords(forPeer peer:PeerID, on:EventLoop?) -> EventLoopFuture<[PeerRecord]>
