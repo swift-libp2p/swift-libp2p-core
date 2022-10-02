@@ -24,6 +24,9 @@ public protocol ConnectionManager {
     
     /// Prints the connection history 
     func dumpConnectionHistory()
+    
+    /// Update the maximum simultaneuous Connections allowed
+    func setMaxConnections(_:Int)
 }
 
 /// Peer Connectedness
