@@ -191,7 +191,7 @@ public class ConnectionStats:CustomStringConvertible {
             if let upgraded = upgraded { entries.append("- Upgraded: \(upgraded)") }
             if let closing = closing { entries.append("- Closing: \(closing)") }
             if let closed = closed { entries.append("- Closed: \(closed)") }
-            return entries.joined(separator: "\n")
+            return entries.joined(separator: "\n\t")
         }
         
         public var history:[Status:Date] {
@@ -224,22 +224,26 @@ public class ConnectionStats:CustomStringConvertible {
         }
     }
     
-    /// the open, upgraded and close timestamps of the connection.
+    /// The UUID of the Connection
+    public let uuid:UUID
+    
+    /// The open, upgraded and close timestamps of the connection.
     /// - Note: that, the close timestamp is undefined until the connection is closed
     /// - TODO: Should be a get only variable (updated internally via status's didSet KVO method)
     public let timeline:Timeline
     
-    /// the direction of the peer in the connection. It can be inbound or outbound
+    /// The direction of the peer in the connection. It can be inbound or outbound
     public let direction:Direction
     
-    /// the encryption method being used in the connection. It is undefined if the connection is not encrypted.
+    /// The encryption method being used in the connection. It is undefined if the connection is not encrypted.
     public var encryption:String?
     
-    /// the multiplexing codec being used in the connection (optional)
+    /// The multiplexing codec being used in the connection (optional)
     public var muxer:String?
     
     
-    public init(direction:Direction, muxer:String? = nil, encryption:String? = nil) {
+    public init(uuid:UUID, direction:Direction, muxer:String? = nil, encryption:String? = nil) {
+        self.uuid = uuid
         self.direction = direction
         self.muxer = muxer
         self.encryption = encryption
@@ -249,11 +253,12 @@ public class ConnectionStats:CustomStringConvertible {
     
     public var description:String {
         return """
-        \nDirection: \(direction)
-        Security: \(encryption?.description ?? "No Security")
-        Muxed: \(muxer?.description ?? "Not Muxed")
-        Status: \(status)
-        Timeline: \(timeline.description)
+        \n\tConnection ID: \(uuid)
+        \tDirection: \(direction)
+        \tSecurity: \(encryption?.description ?? "No Security")
+        \tMuxed: \(muxer?.description ?? "Not Muxed")
+        \tStatus: \(status)
+        \t\(timeline.description)
         """
     }
 }
