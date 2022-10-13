@@ -40,6 +40,14 @@ public extension PeerStore {
             self.add(addresses: peerInfo.addresses, toPeer: peerInfo.peer, on: on)
         }
     }
+    
+    func getPeerInfo(byID id:String, on:EventLoop? = nil) -> EventLoopFuture<PeerInfo> {
+        self.getKey(forPeer: id, on: on).flatMap { key in
+            self.getAddresses(forPeer: key, on: on).map { addresses in
+                return PeerInfo(peer: key, addresses: addresses)
+            }
+        }
+    }
 }
 
 public protocol RecordRepository {
@@ -209,7 +217,7 @@ public extension MetadataRepository {
         add(metaKey: metaKey, data: data, toPeer: toPeer, on: on)
     }
     func add(metaKey:MetadataBook.Keys, data:[UInt8], toPeer:PeerID, on:EventLoop? = nil) -> EventLoopFuture<Void> {
-        add(metaKey: metaKey, data: data, toPeer: toPeer, on: on)
+        add(metaKey: metaKey.rawValue, data: data, toPeer: toPeer, on: on)
     }
     func remove(metaKey:String, fromPeer:PeerID, on:EventLoop? = nil) -> EventLoopFuture<Void> {
         remove(metaKey: metaKey, fromPeer: fromPeer, on: on)
