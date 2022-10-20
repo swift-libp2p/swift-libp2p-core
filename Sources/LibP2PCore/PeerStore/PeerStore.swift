@@ -167,6 +167,7 @@ public struct MetadataBook {
         case Latency         = "latency"
         case LastHandshake   = "lastHandshake"
         case ObservedAddress = "observedAddress"
+        case Prunable        = "prunable"
     }
     
     public struct LatencyMetadata:Codable, CustomStringConvertible {
@@ -196,6 +197,34 @@ public struct MetadataBook {
             """
             Connections: \(self.connectionLatency/1_000)us averaged over \(self.connectionCount) \(self.connectionCount == 1 ? "ping" : "pings")
             Streams: \(self.streamLatency/1_000)us averaged over \(self.streamCount) \(self.streamCount == 1 ? "ping" : "pings")
+            """
+        }
+    }
+    
+    public struct PrunableMetadata:Codable, CustomStringConvertible {
+        public enum Prunable:UInt8, Codable {
+            case prunable = 0
+            case preferred
+            case necessary
+            
+            var description:String {
+                switch self {
+                case .prunable:  return "prunable"
+                case .preferred: return "preferred"
+                case .necessary: return "necessary"
+                }
+            }
+        }
+        
+        public init(prunable:Prunable = .prunable) {
+            self.prunable = prunable
+        }
+        
+        public var prunable:Prunable
+        
+        public var description: String {
+            """
+            Peer Importance: \(prunable.description)")
             """
         }
     }
