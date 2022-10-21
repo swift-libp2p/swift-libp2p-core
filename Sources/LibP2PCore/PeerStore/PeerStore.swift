@@ -168,6 +168,7 @@ public struct MetadataBook {
         case LastHandshake   = "lastHandshake"
         case ObservedAddress = "observedAddress"
         case Prunable        = "prunable"
+        case Discovered      = "discovered"
     }
     
     public struct LatencyMetadata:Codable, CustomStringConvertible {
@@ -231,13 +232,19 @@ public struct MetadataBook {
 }
 
 public protocol MetadataRepository {
+    //var eventLoop:EventLoop { get }
+    
     func removeAllMetadata(forPeer:PeerID, on:EventLoop?) -> EventLoopFuture<Void>
     func add(metaKey:String, data:[UInt8], toPeer:PeerID, on:EventLoop?) -> EventLoopFuture<Void>
     func add(metaKey:MetadataBook.Keys, data:[UInt8], toPeer:PeerID, on:EventLoop?) -> EventLoopFuture<Void>
     func remove(metaKey:String, fromPeer:PeerID, on:EventLoop?) -> EventLoopFuture<Void>
+    //func remove(metaKey:MetadataBook.Keys, fromPeer:PeerID, on:EventLoop?) -> EventLoopFuture<Void>
     func getMetadata(forPeer:PeerID, on:EventLoop?) -> EventLoopFuture<Metadata>
+    //func getMetadata(metaKey:String, forPeer:PeerID, on:EventLoop?) -> EventLoopFuture<(key:String, value: [UInt8])>
+    //func getMetadata(metaKey:MetadataBook.Keys, forPeer:PeerID, on:EventLoop?) -> EventLoopFuture<(key:String, value: [UInt8])>
 }
 
+/// TODO:  Switch from data to Codable, we handle encoding / decoding return typed values when possible...
 public extension MetadataRepository {
     func removeAllMetadata(forPeer:PeerID, on:EventLoop? = nil) -> EventLoopFuture<Void> {
         removeAllMetadata(forPeer: forPeer, on: on)
@@ -245,13 +252,27 @@ public extension MetadataRepository {
     func add(metaKey:String, data:[UInt8], toPeer:PeerID, on:EventLoop? = nil) -> EventLoopFuture<Void> {
         add(metaKey: metaKey, data: data, toPeer: toPeer, on: on)
     }
+//    func add<T:Codable>(metaKey:String, data:T, toPeer:PeerID, on:EventLoop? = nil) -> EventLoopFuture<Void> {
+//        do {
+//            let data = try JSONEncoder().encode(data)
+//            return add(metaKey: metaKey, data: data, toPeer: toPeer, on: on)
+//        } catch {
+//            return (on ?? eventloop).makeFailedFuture(error)
+//        }
+//    }
     func add(metaKey:MetadataBook.Keys, data:[UInt8], toPeer:PeerID, on:EventLoop? = nil) -> EventLoopFuture<Void> {
         add(metaKey: metaKey.rawValue, data: data, toPeer: toPeer, on: on)
     }
     func remove(metaKey:String, fromPeer:PeerID, on:EventLoop? = nil) -> EventLoopFuture<Void> {
         remove(metaKey: metaKey, fromPeer: fromPeer, on: on)
     }
+    //func remove(metaKey:MetadataBook.Keys, fromPeer:PeerID, on:EventLoop? = nil) -> EventLoopFuture<Void> {
+    //    remove(metaKey: metaKey.rawValue, fromPeer: fromPeer, on: on)
+    //}
     func getMetadata(forPeer:PeerID, on:EventLoop? = nil) -> EventLoopFuture<Metadata> {
         getMetadata(forPeer: forPeer, on: on)
     }
+    //func getMetadata(metaKey: String, forPeer:PeerID, on:EventLoop? = nil) -> EventLoopFuture<(key:String, value: [UInt8])> {
+    //    getMetadata(metaKey: metaKey, forPeer: forPeer, on: on)
+    //}
 }
