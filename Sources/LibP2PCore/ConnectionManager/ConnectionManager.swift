@@ -5,6 +5,8 @@
 //  Created by Brandon Toms on 3/8/22.
 //
 
+import NIOCore
+
 /// - TODO: Remove Optional Return Value
 public protocol ConnectionManager {
     func getConnections(on:EventLoop?) -> EventLoopFuture<[Connection]>
@@ -27,6 +29,9 @@ public protocol ConnectionManager {
     
     /// Update the maximum simultaneuous Connections allowed
     func setMaxConnections(_:Int)
+    
+    /// Sets the Idle Timeout for Connections with zero streams
+    func setIdleTimeout(_:TimeAmount)
 }
 
 /// Peer Connectedness
