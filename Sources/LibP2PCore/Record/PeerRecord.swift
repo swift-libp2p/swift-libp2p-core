@@ -43,9 +43,19 @@ public final class PeerRecord:Record {
         }
         self.peerID = validatingPubKey
         
-        self.multiaddrs = try pr.addresses.map {
-            try Multiaddr($0.multiaddr)
+        // Instead of failing if we fail to decode any Multiaddr
+        // let's only fail if we fail to decode all of them.
+        var err:Error? = nil
+        self.multiaddrs = pr.addresses.compactMap {
+            do {
+                return try Multiaddr($0.multiaddr)
+            } catch {
+                err = error
+                return nil
+            }
         }
+        if self.multiaddrs.isEmpty, let err = err { throw err }
+        
         self.sequenceNumber = pr.seq
     }
     
