@@ -18,7 +18,7 @@ import NIOCore
 //import PeerID
 
 struct ID {
-    static let TestingID = "/p2p/_testing"
+    static let Testing = "/p2p/_testing"
 }
 
 public protocol LibP2PProtocol {
