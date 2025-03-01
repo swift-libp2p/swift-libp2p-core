@@ -18,6 +18,6 @@
 ///
 /// This is an EXPERIMENTAL type. It will change in the future. Refer to the
 /// connmgr.ConnectionGater godoc for more info.
-public enum DisconnectReason:Int {
+public enum DisconnectReason: Int {
     case noReason = 0
 }

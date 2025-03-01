@@ -13,6 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 import XCTest
+
 @testable import LibP2PCore
 
 final class LibP2PCoreTests: XCTestCase {

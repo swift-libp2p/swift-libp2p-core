@@ -32,41 +32,46 @@ public enum PubSub {
         case data(PubSubMessage)
         case error(Error)
 
-        public var rawValue:String {
+        public var rawValue: String {
             switch self {
-            case .newPeer:     return "newPeer"
-            case .data:        return "data"
-            case .error:       return "error"
+            case .newPeer: return "newPeer"
+            case .data: return "data"
+            case .error: return "error"
             }
         }
     }
-    
+
     public struct SubscriptionConfig {
-        public let topic:String
-        public let signaturePolicy:SignaturePolicy
-        public let validator:ValidatorFunction
-        public let messageIDFunc:MessageIDFunction
-        
-        public init(topic:String, signaturePolicy:SignaturePolicy = .strictSign, validator:ValidatorFunction, messageIDFunc:MessageIDFunction) {
+        public let topic: String
+        public let signaturePolicy: SignaturePolicy
+        public let validator: ValidatorFunction
+        public let messageIDFunc: MessageIDFunction
+
+        public init(
+            topic: String,
+            signaturePolicy: SignaturePolicy = .strictSign,
+            validator: ValidatorFunction,
+            messageIDFunc: MessageIDFunction
+        ) {
             self.topic = topic
             self.signaturePolicy = signaturePolicy
             self.validator = validator
             self.messageIDFunc = messageIDFunc
         }
     }
-    
+
     public enum SignaturePolicy {
         case strictSign
         case strictNoSign
     }
-    
+
     public enum ValidatorFunction {
         /// Doesn't perform any Message Validation, accepts all inbound messages
         case acceptAll
         /// Perform custom Message Validation on each inbound message (like passing the message through a blacklist and rejecting message from certain senders)
-        case custom((_:PubSubMessage) -> Bool)
-        
-        public var validationFunction:((_:PubSubMessage) -> Bool) {
+        case custom((_: PubSubMessage) -> Bool)
+
+        public var validationFunction: ((_: PubSubMessage) -> Bool) {
             switch self {
             case .acceptAll:
                 return { _ in true }
@@ -75,22 +80,22 @@ public enum PubSub {
             }
         }
     }
-    
+
     public final class SubscriptionHandler {
         /// The topic this subscription is tied to
-        private weak var pubsub:PubSubCore?
-        let topic:String
-        
+        private weak var pubsub: PubSubCore?
+        let topic: String
+
         /// A method that gets called when Stream Events are triggered
-        public var on:((SubscriptionEvent) -> EventLoopFuture<Void>)?
-        
-        public init(pubSub:PubSubCore, topic:String) {
+        public var on: ((SubscriptionEvent) -> EventLoopFuture<Void>)?
+
+        public init(pubSub: PubSubCore, topic: String) {
             self.pubsub = pubSub
             self.topic = topic
         }
-        
+
         /// Writes data to the remote peer
-        public func publish(_ data:Data, promise:EventLoopPromise<Void>? = nil) {
+        public func publish(_ data: Data, promise: EventLoopPromise<Void>? = nil) {
             guard let ps = pubsub else {
                 promise?.fail(Errors.subscriptionNotAvailable)
                 return
@@ -101,9 +106,9 @@ public enum PubSub {
             }
             promise.completeWith(ps.publish(topic: self.topic, data: data, on: nil))
         }
-        
+
         /// Writes bytes to the remote peer
-        public func publish(_ bytes:[UInt8], promise:EventLoopPromise<Void>? = nil) {
+        public func publish(_ bytes: [UInt8], promise: EventLoopPromise<Void>? = nil) {
             guard let ps = pubsub else {
                 promise?.fail(Errors.subscriptionNotAvailable)
                 return
@@ -114,9 +119,9 @@ public enum PubSub {
             }
             promise.completeWith(ps.publish(topic: self.topic, bytes: bytes, on: nil))
         }
-        
+
         /// Writes bytes to the remote peer
-        public func publish(_ buffer:ByteBuffer, promise:EventLoopPromise<Void>? = nil) {
+        public func publish(_ buffer: ByteBuffer, promise: EventLoopPromise<Void>? = nil) {
             guard let ps = pubsub else {
                 promise?.fail(Errors.subscriptionNotAvailable)
                 return
@@ -127,24 +132,24 @@ public enum PubSub {
             }
             promise.completeWith(ps.publish(topic: self.topic, buffer: buffer, on: nil))
         }
-        
-        public func unsubscribe(promise:EventLoopPromise<Void>? = nil) {
+
+        public func unsubscribe(promise: EventLoopPromise<Void>? = nil) {
             guard let ps = pubsub else {
                 promise?.fail(Errors.subscriptionNotAvailable)
                 return
             }
             let _ = ps.unsubscribe(topic: self.topic, on: nil)
         }
-        
+
         func makeSucceededVoidFuture() -> EventLoopFuture<Void> {
             (self.pubsub?.eventLoop.makeSucceededVoidFuture())!
         }
-        
-        public enum Errors:Error {
+
+        public enum Errors: Error {
             case subscriptionNotAvailable
         }
     }
-    
+
     public enum MessageIDFunction {
         /// Calculates a Message's ID by hashing the Message Sequence Number and the Message Sender
         case hashSequenceNumberAndFromFields
@@ -153,9 +158,9 @@ public enum PubSub {
         /// Simply concatenates the messages From data and Sequence Number (default message id function)
         case concatFromAndSequenceFields
         /// Specify your own custom method for generating a Message's ID
-        case custom((_:PubSubMessage) -> Data)
-        
-        public var messageIDFunction:((_:PubSubMessage) -> Data) {
+        case custom((_: PubSubMessage) -> Data)
+
+        public var messageIDFunction: ((_: PubSubMessage) -> Data) {
             switch self {
             case .hashSequenceNumberAndFromFields:
                 return { message in
@@ -182,7 +187,7 @@ public enum PubSub {
             }
         }
     }
-    
+
     public enum MessageState {
         public enum FilterType {
             case known
@@ -190,51 +195,54 @@ public enum PubSub {
             case full
         }
     }
-    
+
     public struct Subscriber {
-        public let id:PeerID
-        public private(set) var inbound:Stream?
-        public private(set) var outbound:Stream?
-        
-        public init(id:PeerID, inbound:Stream? = nil, outbound:Stream? = nil) {
+        public let id: PeerID
+        public private(set) var inbound: Stream?
+        public private(set) var outbound: Stream?
+
+        public init(id: PeerID, inbound: Stream? = nil, outbound: Stream? = nil) {
             self.id = id
             self.inbound = inbound
             self.outbound = outbound
         }
-        
-        public func write(_ bytes:[UInt8]) throws {
+
+        public func write(_ bytes: [UInt8]) throws {
             guard let outbound = outbound else {
                 throw Errors.noOutboundStream
             }
             let _ = outbound.write(bytes)
         }
-        
-        public func close(on:EventLoop) -> EventLoopFuture<Void> {
-            EventLoopFuture.whenAllComplete([
-                (self.inbound?.close(gracefully: true) ?? on.makeSucceededVoidFuture()),
-                (self.outbound?.close(gracefully: true) ?? on.makeSucceededVoidFuture())
-            ], on: on).map { _ in print("Closed Subscriber<\(id)> Streams") }
+
+        public func close(on: EventLoop) -> EventLoopFuture<Void> {
+            EventLoopFuture.whenAllComplete(
+                [
+                    (self.inbound?.close(gracefully: true) ?? on.makeSucceededVoidFuture()),
+                    (self.outbound?.close(gracefully: true) ?? on.makeSucceededVoidFuture()),
+                ],
+                on: on
+            ).map { _ in print("Closed Subscriber<\(id)> Streams") }
         }
-        
-        public mutating func attachInbound(stream:Stream) {
+
+        public mutating func attachInbound(stream: Stream) {
             guard stream.direction == .inbound, stream.connection?.remotePeer == id else { return }
             self.inbound = stream
         }
-        
-        public mutating func attachOutbound(stream:Stream) {
+
+        public mutating func attachOutbound(stream: Stream) {
             guard stream.direction == .outbound, stream.connection?.remotePeer == id else { return }
             self.outbound = stream
         }
-        
+
         public mutating func detachInboundStream() {
             self.inbound = nil
         }
-        
+
         public mutating func detachOutboundStream() {
             self.outbound = nil
         }
-        
-        public enum Errors:Error {
+
+        public enum Errors: Error {
             case noOutboundStream
         }
     }
@@ -246,30 +254,30 @@ public enum PubSub {
 //}
 
 public protocol RPCMessageCore {
-    var subs:[SubOptsCore] { get }
-    var messages:[PubSubMessage] { get }
+    var subs: [SubOptsCore] { get }
+    var messages: [PubSubMessage] { get }
     //var control:ControlMessageCore { get }
 }
 
-public protocol ControlMessageCore { }
+public protocol ControlMessageCore {}
 
 public protocol SubOptsCore {
-    var subscribe:Bool { get }
-    var topicID:String { get }
+    var subscribe: Bool { get }
+    var topicID: String { get }
 }
 
-public protocol PubSubMessage:CustomStringConvertible {
-    var from:Data { get }
-    var data:Data { get }
-    var seqno:Data { get }
-    var topicIds:[String] { get }
-    var signature:Data { get }
-    var key:Data { get }
+public protocol PubSubMessage: CustomStringConvertible {
+    var from: Data { get }
+    var data: Data { get }
+    var seqno: Data { get }
+    var topicIds: [String] { get }
+    var signature: Data { get }
+    var key: Data { get }
 }
 
 extension PubSubMessage {
     public var description: String {
-        return """
+        """
         -- ✉️ ---------------------- ✉️ --
         RPC PubSub Message [\(self.topicIds.joined(separator: ", "))]:
         From: \(self.from.asString(base: .base58btc))
@@ -282,31 +290,30 @@ extension PubSubMessage {
     }
 }
 
-public protocol PubSubCore:EventLoopService, AnyObject {
-    static var multicodec:String { get }
-    
+public protocol PubSubCore: EventLoopService, AnyObject {
+    static var multicodec: String { get }
+
     func start() throws
     func stop() throws
-    
-    //func subscribe(topic:String, on:EventLoop?) -> EventLoopFuture<Void>
-    func subscribe(_ config:PubSub.SubscriptionConfig, on loop:EventLoop?) -> EventLoopFuture<Void>
-    func subscribe(_ config:PubSub.SubscriptionConfig) throws -> PubSub.SubscriptionHandler
-    func unsubscribe(topic:String, on:EventLoop?) -> EventLoopFuture<Void>
-    
-    func getTopics(on:EventLoop?) -> EventLoopFuture<[String]>
-    func getPeersSubscribed(to topic:String, on:EventLoop?) -> EventLoopFuture<[PeerID]>
 
-    func publish(topic:String, data:Data, on:EventLoop?) -> EventLoopFuture<Void>
-    func publish(topic:String, bytes:[UInt8], on:EventLoop?) -> EventLoopFuture<Void>
-    func publish(topic:String, buffer:ByteBuffer, on:EventLoop?) -> EventLoopFuture<Void>
-    
-    
+    //func subscribe(topic:String, on:EventLoop?) -> EventLoopFuture<Void>
+    func subscribe(_ config: PubSub.SubscriptionConfig, on loop: EventLoop?) -> EventLoopFuture<Void>
+    func subscribe(_ config: PubSub.SubscriptionConfig) throws -> PubSub.SubscriptionHandler
+    func unsubscribe(topic: String, on: EventLoop?) -> EventLoopFuture<Void>
+
+    func getTopics(on: EventLoop?) -> EventLoopFuture<[String]>
+    func getPeersSubscribed(to topic: String, on: EventLoop?) -> EventLoopFuture<[PeerID]>
+
+    func publish(topic: String, data: Data, on: EventLoop?) -> EventLoopFuture<Void>
+    func publish(topic: String, bytes: [UInt8], on: EventLoop?) -> EventLoopFuture<Void>
+    func publish(topic: String, buffer: ByteBuffer, on: EventLoop?) -> EventLoopFuture<Void>
+
     //func publish(topics:[String], messages:[[UInt8]], on:EventLoop?) -> EventLoopFuture<Void>
-    
+
     //func validate(message:RPCMessageCore, on:EventLoop?) -> EventLoopFuture<Bool>
     //func validateExtended(message:RPCMessageCore, on:EventLoop?) -> EventLoopFuture<PubSub.ValidationResult>
     //func processRPCMessage(_ message:RPCMessageCore) -> EventLoopFuture<Void>
-    
+
     //func subscribe(config:SubscriptionConfig, on:EventLoop?) -> EventLoopFuture<Void>
     //func subscribe(topic:String) -> SubscriptionHandler
     //func subscribe(_ config:PubSub.SubscriptionConfig) throws -> PubSub.SubscriptionHandler
@@ -324,10 +331,9 @@ public protocol PubSubCore:EventLoopService, AnyObject {
 //}
 
 public protocol PeerConnectionDelegate {
-    func onPeerConnected(peerID:PeerID, stream:Stream) -> EventLoopFuture<Void>
-    func onPeerDisconnected(_:PeerID) -> EventLoopFuture<Void>
+    func onPeerConnected(peerID: PeerID, stream: Stream) -> EventLoopFuture<Void>
+    func onPeerDisconnected(_: PeerID) -> EventLoopFuture<Void>
 }
-
 
 /// Use these protocols to abstract away the specifics for both PeerState and MessageCache
 /// Like FloodSub might have a basic implementation while GossipSub has a more complex one. Either way, PubSubBase shouldn't care.
@@ -348,38 +354,46 @@ public protocol PeerConnectionDelegate {
 //    //func peerExists(_ peer:PeerID, atAddress address:Multiaddr, on loop:EventLoop?) -> EventLoopFuture<Bool>
 //}
 
-public protocol PeerStateProtocol:EventLoopService, PeerConnectionDelegate {
+public protocol PeerStateProtocol: EventLoopService, PeerConnectionDelegate {
     // Add and Remove Peers
-    func addNewPeer(_ peer:PeerID, on:EventLoop?) -> EventLoopFuture<Bool>
-    func removePeer(_ peer:PeerID, on:EventLoop?) -> EventLoopFuture<Void>
-    
+    func addNewPeer(_ peer: PeerID, on: EventLoop?) -> EventLoopFuture<Bool>
+    func removePeer(_ peer: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
+
     // Attach inbound & outbound streams to existing peer
-    func attachInboundStream(_ peer:PeerID, inboundStream:Stream, on:EventLoop?) -> EventLoopFuture<Void>
-    func attachOutboundStream(_ peer:PeerID, outboundStream:Stream, on:EventLoop?) -> EventLoopFuture<Void>
-    func detachInboundStream(_ peer:PeerID, on:EventLoop?) -> EventLoopFuture<Void>
-    func detachOutboundStream(_ peer:PeerID, on:EventLoop?) -> EventLoopFuture<Void>
-    
+    func attachInboundStream(_ peer: PeerID, inboundStream: Stream, on: EventLoop?) -> EventLoopFuture<Void>
+    func attachOutboundStream(_ peer: PeerID, outboundStream: Stream, on: EventLoop?) -> EventLoopFuture<Void>
+    func detachInboundStream(_ peer: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
+    func detachOutboundStream(_ peer: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
+
     // Update topics / subscriptions
-    func update(topics:[String], for peer:PeerID, on:EventLoop?) -> EventLoopFuture<Void>
-    func update(subscriptions:[String:Bool], for peer:PeerID, on:EventLoop?) -> EventLoopFuture<Void>
-    func peersSubscribedTo(topic:String, on loop:EventLoop?) -> EventLoopFuture<[PubSub.Subscriber]>
-    func getAllPeers(on loop:EventLoop?) -> EventLoopFuture<[PubSub.Subscriber]>
-    func topicSubscriptions(on loop:EventLoop?) -> EventLoopFuture<[String]>
-    func subscribeSelf(to topic:String, on loop:EventLoop?) -> EventLoopFuture<[String]>
-    func unsubscribeSelf(from topic:String, on loop:EventLoop?) -> EventLoopFuture<[String]>
-    
+    func update(topics: [String], for peer: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
+    func update(subscriptions: [String: Bool], for peer: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
+    func peersSubscribedTo(topic: String, on loop: EventLoop?) -> EventLoopFuture<[PubSub.Subscriber]>
+    func getAllPeers(on loop: EventLoop?) -> EventLoopFuture<[PubSub.Subscriber]>
+    func topicSubscriptions(on loop: EventLoop?) -> EventLoopFuture<[String]>
+    func subscribeSelf(to topic: String, on loop: EventLoop?) -> EventLoopFuture<[String]>
+    func unsubscribeSelf(from topic: String, on loop: EventLoop?) -> EventLoopFuture<[String]>
+
     // Get a peers inbound / outbound streams
-    func streamsFor(_ peer:PeerID, on:EventLoop?) -> EventLoopFuture<PubSub.Subscriber>
-    
+    func streamsFor(_ peer: PeerID, on: EventLoop?) -> EventLoopFuture<PubSub.Subscriber>
+
     //func peerExists(_ peer:PeerID, atAddress address:Multiaddr, on loop:EventLoop?) -> EventLoopFuture<Bool>
 }
 
 /// Use these protocols to abstract away the specifics for both PeerState and MessageCache
 /// Like FloodSub might have a basic implementation while GossipSub has a more complex one. Either way, PubSubBase shouldn't care.
-public protocol MessageStateProtocol:EventLoopService {
-    func put(messageID:Data, message:(topic:String, data:PubSubMessage), on loop:EventLoop?) -> EventLoopFuture<Bool>
-    func put(messages:[Data:PubSubMessage], on loop:EventLoop?) -> EventLoopFuture<[Data:PubSubMessage]>
-    func get(messageID:Data, on loop:EventLoop?) -> EventLoopFuture<(topic:String, data:PubSubMessage)?>
-    func exists(messageID:Data, on loop:EventLoop?) -> EventLoopFuture<Bool>
-    func filter(ids:Set<Data>, returningOnly:PubSub.MessageState.FilterType, on loop:EventLoop?) -> EventLoopFuture<[Data]>
+public protocol MessageStateProtocol: EventLoopService {
+    func put(
+        messageID: Data,
+        message: (topic: String, data: PubSubMessage),
+        on loop: EventLoop?
+    ) -> EventLoopFuture<Bool>
+    func put(messages: [Data: PubSubMessage], on loop: EventLoop?) -> EventLoopFuture<[Data: PubSubMessage]>
+    func get(messageID: Data, on loop: EventLoop?) -> EventLoopFuture<(topic: String, data: PubSubMessage)?>
+    func exists(messageID: Data, on loop: EventLoop?) -> EventLoopFuture<Bool>
+    func filter(
+        ids: Set<Data>,
+        returningOnly: PubSub.MessageState.FilterType,
+        on loop: EventLoop?
+    ) -> EventLoopFuture<[Data]>
 }

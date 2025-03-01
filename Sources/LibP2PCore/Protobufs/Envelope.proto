@@ -12,45 +12,52 @@
 //
 //===----------------------------------------------------------------------===//
 
-//syntax = "proto3";
+// syntax = "proto3";
 //
-//// Envelope encloses a signed payload produced by a peer, along with the public
-//// key of the keypair it was signed with so that it can be statelessly validated
-//// by the receiver.
+//// Envelope encloses a signed payload produced by a peer, along with the
+///public / key of the keypair it was signed with so that it can be statelessly
+///validated / by the receiver.
 ////
 //// The payload is prefixed with a byte string that determines the type, so it
 //// can be deserialized deterministically. Often, this byte string is a
 //// multicodec.
-//message Envelope {
-//    enum KeyType {
-//      RSA = 0;
-//      Ed25519 = 1;
-//      Secp256k1 = 2;
-//    }
-//    message PublicKey {
-//      KeyType Type = 1;
-//      bytes Data = 2;
-//    }
+// message Envelope {
+//     enum KeyType {
+//       RSA = 0;
+//       Ed25519 = 1;
+//       Secp256k1 = 2;
+//     }
+//     message PublicKey {
+//       KeyType Type = 1;
+//       bytes Data = 2;
+//     }
 //
-//    // public_key is the public key of the keypair the enclosed payload was
-//    // signed with.
-//    PublicKey public_key = 1;
+//     // public_key is the public key of the keypair the enclosed payload was
+//     // signed with.
+//     PublicKey public_key = 1;
 //
-//    // payload_type encodes the type of payload, so that it can be deserialized
-//    // deterministically.
-//    bytes payload_type = 2;
+//     // payload_type encodes the type of payload, so that it can be
+//     deserialized
+//     // deterministically.
+//     bytes payload_type = 2;
 //
-//    // payload is the actual payload carried inside this envelope.
-//    bytes payload = 3;
+//     // payload is the actual payload carried inside this envelope.
+//     bytes payload = 3;
 //
-//    // signature is the signature produced by the private key corresponding to
-//    // the enclosed public key, over the payload, prefixing a domain string for
-//    // additional security.
-//    bytes signature = 5;
-//}
+//     // signature is the signature produced by the private key corresponding
+//     to
+//     // the enclosed public key, over the payload, prefixing a domain string
+//     for
+//     // additional security.
+//     bytes signature = 5;
+// }
 
-
-// We're using proto2 instead of proto3 because proto3 drops default values by design. You can append an optional keyword to circumvent this, but then you lose out on the warnings during serialization when those values aren't set. This is a problem with our internally defined PublicKey message. If we figure out how to link to our PublicKey message in our libp2p-crypto library we can move back to using the proto3 definition above...
+// We're using proto2 instead of proto3 because proto3 drops default values by
+// design. You can append an optional keyword to circumvent this, but then you
+// lose out on the warnings during serialization when those values aren't set.
+// This is a problem with our internally defined PublicKey message. If we figure
+// out how to link to our PublicKey message in our libp2p-crypto library we can
+// move back to using the proto3 definition above...
 syntax = "proto2";
 
 // Envelope encloses a signed payload produced by a peer, along with the public
@@ -62,13 +69,13 @@ syntax = "proto2";
 // multicodec.
 message Envelope {
     enum KeyType {
-      RSA = 0;
-      Ed25519 = 1;
-      Secp256k1 = 2;
+        RSA = 0;
+        Ed25519 = 1;
+        Secp256k1 = 2;
     }
     message PublicKey {
-      required KeyType Type = 1;
-      required bytes Data = 2;
+        required KeyType Type = 1;
+        required bytes Data = 2;
     }
 
     // public_key is the public key of the keypair the enclosed payload was

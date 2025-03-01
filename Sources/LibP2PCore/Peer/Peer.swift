@@ -12,8 +12,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-import PeerID
 import Multiaddr
+import PeerID
 
 //public protocol KeyPair {
 //    var publicKey:PublicKey { get }
@@ -35,10 +35,10 @@ import Multiaddr
 //}
 
 public struct PeerInfo {
-    public let peer:PeerID
-    public let addresses:[Multiaddr]
-    
-    public init(peer:PeerID, addresses:[Multiaddr]) {
+    public let peer: PeerID
+    public let addresses: [Multiaddr]
+
+    public init(peer: PeerID, addresses: [Multiaddr]) {
         self.peer = peer
         self.addresses = addresses
     }
@@ -61,7 +61,5 @@ extension PeerID {
 //        self.
 //    }
 //}
-
-
 
 //extension PeerID.Key.RawPublicKey: PublicKey { }

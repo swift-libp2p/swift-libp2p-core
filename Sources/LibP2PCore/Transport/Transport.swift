@@ -12,9 +12,9 @@
 //
 //===----------------------------------------------------------------------===//
 
+import Multiaddr
 import NIOCore
 import PeerID
-import Multiaddr
 
 /// A CapableConn represents a connection that offers the basic
 /// capabilities required by libp2p: stream multiplexing, encryption and
@@ -28,27 +28,27 @@ import Multiaddr
 /// CapableConn provides accessors for the local and remote multiaddrs used to
 /// establish the connection and an accessor for the underlying Transport.
 public protocol CapableConnection: Connection {
-    var muxer:Muxer { get }
-    var security:Security { get }
-    var remoteAddress:Multiaddr { get }
-    var localAddress:Multiaddr { get }
+    var muxer: Muxer { get }
+    var security: Security { get }
+    var remoteAddress: Multiaddr { get }
+    var localAddress: Multiaddr { get }
     //var scoper:Connection.Scoper { get }
-    
+
     /// transport returns the Transport to which this connection belongs
-    var transport:Transport { get }
+    var transport: Transport { get }
 }
 
 public protocol TransportManager {
     //func getAll(on:EventLoop?) -> EventLoopFuture<[Transport]>
     //func clear(on:EventLoop?) -> EventLoopFuture<Void>
     //func findBest(forMultiaddr:Multiaddr, on:EventLoop?) -> EventLoopFuture<Transport>
-    
+
     func getAll() -> [Transport]
-    func findBest(forMultiaddr:Multiaddr) throws -> Transport
+    func findBest(forMultiaddr: Multiaddr) throws -> Transport
 }
 
 /// This can be a placeholder for implementations to register their keys / configs on.
-public enum TransportConfig {  }
+public enum TransportConfig {}
 
 /// Transport represents any device by which you can connect to and accept
 /// connections from other peers.
@@ -65,29 +65,29 @@ public enum TransportConfig {  }
 /// `Close`.
 ///
 /// For a conceptual overview, see https://docs.libp2p.io/concepts/transport/
-public protocol Transport:CustomStringConvertible {
+public protocol Transport: CustomStringConvertible {
     /// The transports Uniqe key descriptor
-    static var key:String { get }
-    
+    static var key: String { get }
+
     /// Dial dials a remote peer. It should try to reuse local listener addresses if possible but it may choose not to.
     /// TODO: Return a CapableConnection??
-    func dial(address:Multiaddr) -> EventLoopFuture<Connection>
-    
+    func dial(address: Multiaddr) -> EventLoopFuture<Connection>
+
     /// CanDial returns true if this transport knows how to dial the given multiaddr.
     ///
     /// Returning true does not guarantee that dialing this multiaddr will
     /// succeed. This function should *only* be used to preemptively filter
     /// out addresses that we can't dial.
-    func canDial(address:Multiaddr) -> Bool
-    
+    func canDial(address: Multiaddr) -> Bool
+
     /// Listen listens on the passed multiaddr.
-    func listen(address:Multiaddr) -> EventLoopFuture<Listener>
-    
+    func listen(address: Multiaddr) -> EventLoopFuture<Listener>
+
     /// Protocol returns the set of protocols handled by this transport.
-    var protocols:[LibP2PProtocol] { get }
-    
+    var protocols: [LibP2PProtocol] { get }
+
     /// returns true if this is a proxy transport
-    var proxy:Bool { get }
+    var proxy: Bool { get }
 }
 
 /// Listener is an interface closely resembling the net.Listener interface.
@@ -96,14 +96,14 @@ public protocol Transport:CustomStringConvertible {
 public protocol Listener {
     func accept() -> EventLoopFuture<Connection>
     func close() -> EventLoopFuture<Void>
-    
-    var address:Multiaddr { get }
+
+    var address: Multiaddr { get }
 }
 
 /// TransportNetwork is an inet.Network with methods for managing transports.
 public protocol TransportNetwork {
-    var network:Network { get }
-    
+    var network: Network { get }
+
     /// AddTransport adds a transport to this Network.
     ///
     /// When dialing, this Network will iterate over the protocols in the
@@ -115,18 +115,18 @@ public protocol TransportNetwork {
     /// local multiaddr and pick the *last* protocol registered with a proxy
     /// transport, if any. Otherwise, it'll pick the transport registered to
     /// handle the last protocol in the multiaddr.
-    func addTransport(_ t:Transport) -> EventLoopFuture<Void>
+    func addTransport(_ t: Transport) -> EventLoopFuture<Void>
 }
 
 /// Upgrader is a multistream upgrader that can upgrade an underlying connection to a full transport connection (secure and multiplexed).
 public protocol Upgrader {
     //func upgradeListener(_ t:Transport, listener:MAListener) -> EventLoopFuture<Listener>
-    
+
     //func upgrade(_ t:Transport, maconn:MAConnection, direction:Network.Direction, peer:Peer, scope:ConnectionManager.Scope) -> EventLoopFuture<CapableConnection>
 }
 
 extension Transport {
-    public var description:String {
-        return "\(Self.key)"
+    public var description: String {
+        "\(Self.key)"
     }
 }

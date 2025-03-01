@@ -12,11 +12,11 @@
 //
 //===----------------------------------------------------------------------===//
 
+import Multiaddr
 import NIOCore
 import PeerID
-import Multiaddr
 
-enum RoutingErrors:Error {
+enum RoutingErrors: Error {
     /// ErrNotFound is returned when the router fails to find the requested record.
     case notFound
     /// ErrNotSupported is returned when the router doesn't support the given record type/operation.
@@ -30,12 +30,12 @@ public protocol ContentRouting {
     /// Provide adds the given cid to the content routing system. If 'true' is
     /// passed, it also announces it, otherwise it is just kept in the local
     /// accounting of which objects are being provided.
-    func provide(cid:[UInt8], announce:Bool) -> EventLoopFuture<Void>
-    
+    func provide(cid: [UInt8], announce: Bool) -> EventLoopFuture<Void>
+
     /// Search for peers who are able to provide a given key
     ///
     /// - Note: When count is 0, this method will return an unbounded number of results.
-    func findProviders(cid:[UInt8], count:Int) -> EventLoopFuture<[Multiaddr]>
+    func findProviders(cid: [UInt8], count: Int) -> EventLoopFuture<[Multiaddr]>
 }
 
 /// PeerRouting is a way to find address information about certain peers.
@@ -43,17 +43,17 @@ public protocol ContentRouting {
 /// This can be implemented by a simple lookup table, a tracking server, or even a DHT.
 public protocol PeerRouting {
     // FindPeer searches for a peer with given ID, returns a peer.AddrInfo with relevant addresses.
-    func findPeer(peer:PeerID) -> EventLoopFuture<PeerInfo>
+    func findPeer(peer: PeerID) -> EventLoopFuture<PeerInfo>
 }
 
 /// ValueStore is a basic Put/Get interface.
 public protocol ValueStore {
     /// putValue adds value corresponding to given Key.
-    func putValue(key:String, value:[UInt8], options: Any...) -> EventLoopFuture<Void>
-    
+    func putValue(key: String, value: [UInt8], options: Any...) -> EventLoopFuture<Void>
+
     /// getValue searches for the value corresponding to the given key
-    func getValue(key:String, options: Any...) -> EventLoopFuture<[UInt8]>
-    
+    func getValue(key: String, options: Any...) -> EventLoopFuture<[UInt8]>
+
     /// SearchValue searches for better and better values from this value store corresponding to the given Key.
     ///
     /// - Note: By default implementations must stop the search after a good value is found.
@@ -67,20 +67,20 @@ public protocol ValueStore {
     ///
     /// - TODO: Not entirely sure if the escaping callback with a final eventloopfuture is the correct way to go about this.
     /// We want to simulate Combine's publish subcribe model, where we can listen for multiple events before the channel is closed.
-    func searchValue(key:String, onValue: @escaping ([UInt8])->Void, options: Any...) -> EventLoopFuture<[UInt8]>
+    func searchValue(key: String, onValue: @escaping ([UInt8]) -> Void, options: Any...) -> EventLoopFuture<[UInt8]>
 }
 
-public protocol Routing:ContentRouting, PeerRouting, ValueStore {
+public protocol Routing: ContentRouting, PeerRouting, ValueStore {
     func bootstrap() -> EventLoopFuture<Void>
 }
 
 public protocol PublicKeyFetcher {
     // Takes a b58 or cid string and attempts to find the peers public key
-    func getPublicKey(peerID:String) -> EventLoopFuture<PeerID>
+    func getPublicKey(peerID: String) -> EventLoopFuture<PeerID>
 }
 
 internal enum _Routing {
-    static let PublicKeyNamespace = Array<UInt8>("/pk/".utf8)
+    static let PublicKeyNamespace = [UInt8]("/pk/".utf8)
 }
 
 //func keyForPublicKey(id: Peer) -> [UInt8] {
@@ -90,19 +90,19 @@ func keyForPublicKey(id: PeerID) -> String {
     "/pk/" + id.b58String
 }
 
-func getPublicKey(_ store:ValueStore, peer:PeerID, on:EventLoop) -> EventLoopFuture<PeerID> {
+func getPublicKey(_ store: ValueStore, peer: PeerID, on: EventLoop) -> EventLoopFuture<PeerID> {
     /// extractPublicKey will simply check if the Peer has a pubkey in it's keypair or if the pubkey is embedded in it's ID (in the case of Ed25519 keys)
     if let pubKey = peer.extractPublicKey() {
         return on.makeSucceededFuture(pubKey)
     }
-    
+
     /// If we have a DHT as our routing system, use optimized fetcher
     if let dht = store as? PublicKeyFetcher {
         return dht.getPublicKey(peerID: peer.cidString)
     }
-    
+
     let key = keyForPublicKey(id: peer)
-    
+
     return on.makeFailedFuture(RoutingErrors.notFound)
     /// TODO: Figure out how to handle this...
     //return store.getValue(key: key).flatMapThrowing { pkval -> PublicKey in

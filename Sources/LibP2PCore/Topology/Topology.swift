@@ -12,44 +12,48 @@
 //
 //===----------------------------------------------------------------------===//
 
-import PeerID
 import NIOCore
+import PeerID
 
 /// Taps into the current pool of connections and can filter connections / disconnection events to interested parties / subscribers
 public protocol Topology {
-    
+
     //init(min:Int, max:Int, handlers:TopologyHandler)
-    
-    var min:Int { get }
-    
-    var max:Int { get }
-    
+
+    var min: Int { get }
+
+    var max: Int { get }
+
     /// An optional Object containing the handler called when a peer is connected or disconnected
-    var handlers:TopologyHandler { get }
-    
+    var handlers: TopologyHandler { get }
+
     /// A Map of peers belonging to the topology.
-    var peers:[String:PeerID] { get }
-    
+    var peers: [String: PeerID] { get }
+
     /// Add a peer to the topology.
-    func set(id:String, peer:PeerID) -> EventLoopFuture<Bool>?
-    
+    func set(id: String, peer: PeerID) -> EventLoopFuture<Bool>?
+
     /// Disconnects a peer from the topology.
-    func disconnect(peer:PeerID) -> EventLoopFuture<Void>?
-    
+    func disconnect(peer: PeerID) -> EventLoopFuture<Void>?
+
     func deinitialize()
 }
 
 /// An optional Object containing the handler called when a peer is connected or disconnected
 public struct TopologyHandler {
     /// called everytime a peer is connected in the topology context.
-    public let onConnect:(PeerID, Connection) -> Void
-    
-    public let onNewStream:((Stream) -> Void)?
-    
+    public let onConnect: (PeerID, Connection) -> Void
+
+    public let onNewStream: ((Stream) -> Void)?
+
     /// called everytime a peer is disconnected in the topology context.
-    public let onDisconnect:((PeerID) -> Void)?
-    
-    public init(onConnect:@escaping((PeerID, Connection) -> Void), onNewStream:((Stream) -> Void)? = nil, onDisconnect:((PeerID) -> Void)? = nil) {
+    public let onDisconnect: ((PeerID) -> Void)?
+
+    public init(
+        onConnect: @escaping ((PeerID, Connection) -> Void),
+        onNewStream: ((Stream) -> Void)? = nil,
+        onDisconnect: ((PeerID) -> Void)? = nil
+    ) {
         self.onConnect = onConnect
         self.onNewStream = onNewStream
         self.onDisconnect = onDisconnect
@@ -58,7 +62,7 @@ public struct TopologyHandler {
 
 public protocol MulticodecTopology: Topology {
     /// Creates a new Multicodec Topology, that aggregates, and notifies you of, connected peers that support the specified protocols
-    init(min:Int, max:Int, handlers:TopologyHandler, protocols:[SemVerProtocol])
+    init(min: Int, max: Int, handlers: TopologyHandler, protocols: [SemVerProtocol])
     /// The multicodecs (aka protocols) this topology is interested in
-    var protocols:[SemVerProtocol] { get }
+    var protocols: [SemVerProtocol] { get }
 }

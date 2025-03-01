@@ -22,50 +22,50 @@ import SwiftProtobuf
 // string specified when creating and verifying the envelope. You must know the
 // domain string used to produce the envelope in order to verify the signature
 // and access the payload.
-public final class SealedEnvelope:Envelope {
-    
+public final class SealedEnvelope: Envelope {
+
     // The public key that can be used to verify the signature and derive the peer id of the signer.
     //PublicKey crypto.PubKey
-    public let pubKey:PeerID
+    public let pubKey: PeerID
 
     // A binary identifier that indicates what kind of data is contained in the payload.
     // TODO(yusef): enforce multicodec prefix
     //PayloadType []byte
-    public let payloadType:[UInt8]
+    public let payloadType: [UInt8]
 
     // The envelope payload.
     //RawPayload []byte
-    public let rawPayload:[UInt8]
+    public let rawPayload: [UInt8]
 
     // The signature of the domain string :: type hint :: payload.
     //signature []byte
-    public let signature:[UInt8]
+    public let signature: [UInt8]
 
     // the unmarshalled payload as a Record, cached on first access via the Record accessor method
     //cached         Record
     //unmarshalError error
     //unmarshalOnce  sync.Once
-    lazy var cached:PeerRecord? = {
+    lazy var cached: PeerRecord? = {
         return nil
     }()
 
     /// Creates a new Signed & SealedEnvelope containing the specified Record, ready for marsahling and sending to remote peers...
-    public init<R:Record>(record: R, signedWithKey key: PeerID) throws {
+    public init<R: Record>(record: R, signedWithKey key: PeerID) throws {
         guard let privKey = key.keyPair?.privateKey else {
             throw Errors.noPrivateKey
         }
-        
+
         self.pubKey = record.peerID
-        
-        self.payloadType = [0x03, 0x01] //record.codec.asVarInt
-        
+
+        self.payloadType = [0x03, 0x01]  //record.codec.asVarInt
+
         self.rawPayload = try record.marshal()
-        
+
         self.signature = try privKey.sign(message: Data(record.unsignedPayload())).bytes
     }
-    
+
     /// Takes a marshalled / serialized Envelope object
-    public init(marshaledEnvelope bytes:[UInt8], verifiedWithPublicKey pubKey:[UInt8]? = nil) throws {
+    public init(marshaledEnvelope bytes: [UInt8], verifiedWithPublicKey pubKey: [UInt8]? = nil) throws {
         //print("Attempting to instantiate a SealedEnvelope from marshaled data")
         let env = try EnvelopeMessage(contiguousBytes: bytes)
         //print("We have an Envelope, attempting to extract PublicKey")
@@ -81,19 +81,19 @@ public final class SealedEnvelope:Envelope {
         } else {
             self.pubKey = try PeerID(marshaledPublicKey: env.publicKey.serializedData())
         }
-            
+
         //print("We have a Public Key, proceeding with signature verification")
         self.payloadType = env.payloadType.bytes
-        
+
         self.rawPayload = env.payload.bytes
-        
+
         self.signature = env.signature.bytes
-        
+
         guard try verifySignature() else {
             throw Errors.invalidSignature
         }
     }
-    
+
     public func marshal() throws -> [UInt8] {
         guard let pubKey = self.pubKey.keyPair?.publicKey else {
             throw Errors.noPublicKey
@@ -109,27 +109,27 @@ public final class SealedEnvelope:Envelope {
         env.payloadType = Data(self.payloadType)
         env.payload = Data(self.rawPayload)
         env.signature = Data(self.signature)
-        
-        return try Array<UInt8>(env.serializedData())
+
+        return try [UInt8](env.serializedData())
     }
-    
+
     private func verifySignature() throws -> Bool {
         guard let type = try? Multicodec.getCodecEnum(bytes: self.payloadType) else { throw Errors.emptyPayloadType }
         guard let publicKey = self.pubKey.keyPair?.publicKey else { throw Errors.noPublicKey }
         switch type {
         /// - Note: We check for cidv3 here due to go-libp2p's usage of [0x03, 0x01] libp2p-peer-record hardcoded prefix values...
-        case .cidv3, .libp2p_peer_record: //PeerRecord
+        case .cidv3, .libp2p_peer_record:  //PeerRecord
             //print("Looks like we have a PeerRecord as our underlying Record Type. Attempting to unmarshal and verify signature")
             let pRec = try PeerRecord(marshaledData: Data(self.rawPayload))
             //print("Unmarshaled PeerRecord successfully, proceeding with signature verification")
             return try publicKey.verify(signature: Data(self.signature), for: Data(pRec.unsignedPayload()))
-       
+
         default:
             throw Errors.emptyPayloadType
         }
     }
 
-    public enum Errors:Error, CustomStringConvertible {
+    public enum Errors: Error, CustomStringConvertible {
         case noPrivateKey
         case noPublicKey
         case emptyDomain
@@ -148,15 +148,15 @@ public final class SealedEnvelope:Envelope {
     }
 }
 
-extension SealedEnvelope:CustomStringConvertible {
+extension SealedEnvelope: CustomStringConvertible {
     public var description: String {
-        return """
-            --- 💌 Sealed Envelope 💌 ---
-            PeerID: \(pubKey) (has pubKey: \(pubKey.keyPair?.publicKey != nil ? "true" : "false"))
-            Payload Type: \((try? Multicodec.getCodec(bytes: self.payloadType)) ?? self.payloadType.asString(base: .base16) )
-            Raw Payload: \(self.rawPayload.asString(base: .base16))
-            Signature: \(self.signature.asString(base: .base16))
-            -----------------------------
-            """
+        """
+        --- 💌 Sealed Envelope 💌 ---
+        PeerID: \(pubKey) (has pubKey: \(pubKey.keyPair?.publicKey != nil ? "true" : "false"))
+        Payload Type: \((try? Multicodec.getCodec(bytes: self.payloadType)) ?? self.payloadType.asString(base: .base16) )
+        Raw Payload: \(self.rawPayload.asString(base: .base16))
+        Signature: \(self.signature.asString(base: .base16))
+        -----------------------------
+        """
     }
 }

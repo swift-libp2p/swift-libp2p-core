@@ -12,31 +12,31 @@
 //
 //===----------------------------------------------------------------------===//
 
+import CID
 import NIOCore
 import PeerID
-import CID
 
-public protocol DHTCore:Discovery, EventLoopService {
-    static var key:String { get }
-    
-//    func findPeer(id:PeerID) -> EventLoopFuture<PeerInfo>
-//    func findProviders(cid:CID) -> EventLoopFuture<[PeerInfo]>
-//    func getClosestPeers(key:String) -> EventLoopFuture<[PeerID]>
-//    func getPublicKey(id:PeerID) -> EventLoopFuture<PeerID>
-//    func getValue(forKey:String) -> EventLoopFuture<[UInt8]>
-//    func ping(peer:PeerID) -> EventLoopFuture<TimeAmount>
-//    func provide(key:CID, broadcast:Bool) -> EventLoopFuture<Void>
-//    func putValue(forKey:String, value:[UInt8]) -> EventLoopFuture<Void>
-//    func searchValue(key:String) -> EventLoopFuture<[UInt8]>
-    
+public protocol DHTCore: Discovery, EventLoopService {
+    static var key: String { get }
+
+    //    func findPeer(id:PeerID) -> EventLoopFuture<PeerInfo>
+    //    func findProviders(cid:CID) -> EventLoopFuture<[PeerInfo]>
+    //    func getClosestPeers(key:String) -> EventLoopFuture<[PeerID]>
+    //    func getPublicKey(id:PeerID) -> EventLoopFuture<PeerID>
+    //    func getValue(forKey:String) -> EventLoopFuture<[UInt8]>
+    //    func ping(peer:PeerID) -> EventLoopFuture<TimeAmount>
+    //    func provide(key:CID, broadcast:Bool) -> EventLoopFuture<Void>
+    //    func putValue(forKey:String, value:[UInt8]) -> EventLoopFuture<Void>
+    //    func searchValue(key:String) -> EventLoopFuture<[UInt8]>
+
 }
 
 public protocol DHTRecord {
-    var key:Data { get }
-    var value:Data { get }
-    var author:Data { get }
-    var signature:Data { get }
-    var timeReceived:String { get }
+    var key: Data { get }
+    var value: Data { get }
+    var author: Data { get }
+    var signature: Data { get }
+    var timeReceived: String { get }
 }
 
 //public enum DHT {
