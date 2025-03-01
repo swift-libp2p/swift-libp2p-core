@@ -68,7 +68,8 @@ public enum PubSub {
     public enum ValidatorFunction {
         /// Doesn't perform any Message Validation, accepts all inbound messages
         case acceptAll
-        /// Perform custom Message Validation on each inbound message (like passing the message through a blacklist and rejecting message from certain senders)
+        /// Perform custom Message Validation on each inbound message
+        /// Ex: Rejecting messages based on their address, peerID or any other metric
         case custom((_: PubSubMessage) -> Bool)
 
         public var validationFunction: ((_: PubSubMessage) -> Bool) {
@@ -180,7 +181,7 @@ public enum PubSub {
                 }
             case .concatFromAndSequenceFields:
                 return { message in
-                    return message.from + message.seqno
+                    message.from + message.seqno
                 }
             case .custom(let f):
                 return f

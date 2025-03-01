@@ -46,7 +46,7 @@ public final class SealedEnvelope: Envelope {
     //unmarshalError error
     //unmarshalOnce  sync.Once
     lazy var cached: PeerRecord? = {
-        return nil
+        nil
     }()
 
     /// Creates a new Signed & SealedEnvelope containing the specified Record, ready for marsahling and sending to remote peers...
