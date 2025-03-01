@@ -1,8 +1,13 @@
 .DS_Store
-/.build
+.build/
+.swiftpm/
+.vscode/
+.index-build/
+.devcontainer/
 /Packages
 /*.xcodeproj
 xcuserdata/
-DerivedData/
-.swiftpm/
+/public
+/docs
+.benchmarkBaselines
 Package.resolved
