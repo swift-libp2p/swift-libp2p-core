@@ -1,9 +1,16 @@
+//===----------------------------------------------------------------------===//
 //
-//  Crypto.swift
-//  
+// This source file is part of the swift-libp2p open source project
 //
-//  Created by Brandon Toms on 3/8/22.
+// Copyright (c) 2022-2025 swift-libp2p project authors
+// Licensed under MIT
 //
+// See LICENSE for license information
+// See CONTRIBUTORS for the list of swift-libp2p project authors
+//
+// SPDX-License-Identifier: MIT
+//
+//===----------------------------------------------------------------------===//
 
 /// PrivKey represents a private key that can be used to generate a public key and sign data
 public protocol PrivateKey {
