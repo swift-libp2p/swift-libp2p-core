@@ -1,37 +1,44 @@
+//===----------------------------------------------------------------------===//
 //
-//  ConnectionManager.swift
-//  
+// This source file is part of the swift-libp2p open source project
 //
-//  Created by Brandon Toms on 3/8/22.
+// Copyright (c) 2022-2025 swift-libp2p project authors
+// Licensed under MIT
 //
+// See LICENSE for license information
+// See CONTRIBUTORS for the list of swift-libp2p project authors
+//
+// SPDX-License-Identifier: MIT
+//
+//===----------------------------------------------------------------------===//
 
 import NIOCore
 
 /// - TODO: Remove Optional Return Value
 public protocol ConnectionManager {
-    func getConnections(on:EventLoop?) -> EventLoopFuture<[Connection]>
-    func getConnectionsToPeer(peer:PeerID, on:EventLoop?) -> EventLoopFuture<[Connection]>
-    func getBestConnectionForPeer(peer:PeerID, on:EventLoop?) -> EventLoopFuture<Connection?>
-    func connectedness(peer:PeerID, on:EventLoop?) -> EventLoopFuture<Connectedness>
+    func getConnections(on: EventLoop?) -> EventLoopFuture<[Connection]>
+    func getConnectionsToPeer(peer: PeerID, on: EventLoop?) -> EventLoopFuture<[Connection]>
+    func getBestConnectionForPeer(peer: PeerID, on: EventLoop?) -> EventLoopFuture<Connection?>
+    func connectedness(peer: PeerID, on: EventLoop?) -> EventLoopFuture<Connectedness>
     /// Does this need a toPeer
-    func addConnection(_:Connection, on:EventLoop?) -> EventLoopFuture<Void>
+    func addConnection(_: Connection, on: EventLoop?) -> EventLoopFuture<Void>
     //func addConnection(_:Connection, toPeer:PeerID, on:EventLoop) -> EventLoopFuture<Void>
-    func closeConnectionsToPeer(peer:PeerID, on:EventLoop?) -> EventLoopFuture<Bool>
-    
-    func getConnectionsTo(_:Multiaddr, onlyMuxed:Bool, on:EventLoop?) -> EventLoopFuture<[Connection]>
+    func closeConnectionsToPeer(peer: PeerID, on: EventLoop?) -> EventLoopFuture<Bool>
+
+    func getConnectionsTo(_: Multiaddr, onlyMuxed: Bool, on: EventLoop?) -> EventLoopFuture<[Connection]>
     func closeAllConnections() -> EventLoopFuture<Void>
-    
-//    func onNewInboundChannel(channel:Channel) -> EventLoopFuture<Void>
-//    func onNewOutboundChannel(channel:Channel, remoteAddress:Multiaddr) -> EventLoopFuture<Void>
-    
-    /// Prints the connection history 
+
+    //    func onNewInboundChannel(channel:Channel) -> EventLoopFuture<Void>
+    //    func onNewOutboundChannel(channel:Channel, remoteAddress:Multiaddr) -> EventLoopFuture<Void>
+
+    /// Prints the connection history
     func dumpConnectionHistory()
-    
+
     /// Update the maximum simultaneuous Connections allowed
-    func setMaxConnections(_:Int)
-    
+    func setMaxConnections(_: Int)
+
     /// Sets the Idle Timeout for Connections with zero streams
-    func setIdleTimeout(_:TimeAmount)
+    func setIdleTimeout(_: TimeAmount)
 }
 
 /// Peer Connectedness
