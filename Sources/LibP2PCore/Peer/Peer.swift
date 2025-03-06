@@ -44,22 +44,12 @@ public struct PeerInfo {
     }
 }
 
-extension PeerID {
-    func extractPublicKey() -> PeerID? {
-        if self.type == .isPublic || self.type == .isPrivate { return self }
-        switch self.keyPair?.keyType {
-        case .ed25519:
-            return try? PeerID(cid: self.cidString)
-        default:
-            return nil
+extension Multiaddr {
+    // TODO: Rename this to getPeerID once https://github.com/swift-libp2p/swift-multiaddr/issues/14 is addressed
+    func getPeerIDActual() throws -> PeerID {
+        guard let cid = self.getPeerID() else {
+            throw NSError(domain: "No CID present in Multiaddr", code: 0)
         }
+        return try PeerID(cid: cid)
     }
 }
-
-//extension Multiaddr {
-//    func getPeerID() -> PeerID {
-//        self.
-//    }
-//}
-
-//extension PeerID.Key.RawPublicKey: PublicKey { }
