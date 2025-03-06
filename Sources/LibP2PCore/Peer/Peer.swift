@@ -48,7 +48,7 @@ public struct PeerInfo {
 extension Multiaddr {
     /// Attempts to extract a PeerID from the Multiaddr if one is present
     /// - Note: The returned PeerID is usually only an ID and doesn't contain a key pair. In some instances (ED25519 keys) a public key might be recoverable.
-    func getPeerID() throws -> PeerID {
+    public func getPeerID() throws -> PeerID {
         guard let cid = self.getPeerIDString() else {
             throw NSError(domain: "No CID present in Multiaddr", code: 0)
         }
