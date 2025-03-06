@@ -38,7 +38,7 @@ let package = Package(
         .package(url: "https://github.com/swift-libp2p/swift-peer-id.git", .upToNextMinor(from: "0.1.0")),
 
         // LibP2P Multiaddr
-        .package(url: "https://github.com/swift-libp2p/swift-multiaddr.git", .upToNextMinor(from: "0.0.1")),
+        .package(url: "https://github.com/swift-libp2p/swift-multiaddr.git", .upToNextMinor(from: "0.1.0")),
 
         // Logging
         .package(url: "https://github.com/apple/swift-log.git", .upToNextMajor(from: "1.0.0")),
