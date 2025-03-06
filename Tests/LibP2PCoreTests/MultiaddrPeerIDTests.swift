@@ -19,7 +19,7 @@ import XCTest
 // These Multiaddr <-> PeerID tests are located here in swift-libp2p-core because
 // this is the first package in our stack that depends on the two of them
 final class MultiaddrPeerIDTests: XCTestCase {
-    
+
     // Make sure we can extract a PeerID from a Multiaddr
     func testGetPeerID() throws {
         // B58 String
@@ -35,16 +35,16 @@ final class MultiaddrPeerIDTests: XCTestCase {
             "/dnsaddr/bootstrap.libp2p.io/p2p/bafzbeiagwnqiviaae5aet2zivwhhsorg75x2wka2pu55o7grr23ulx5kxm"
         )
         let peerID3 = try ma3.getPeerIDActual()
-        
+
         XCTAssertEqual(peerID1, peerID2)
         XCTAssertEqual(peerID1, peerID3)
-        
+
         // Embedded Public Key
         let ma4 = try Multiaddr("/dnsaddr/bootstrap.libp2p.io/p2p/12D3KooWAfPDpPRRRBrmqy9is2zjU5srQ4hKuZitiGmh4NTTpS2d")
         let peerID4 = try ma4.getPeerIDActual()
-        
+
         XCTAssertEqual(peerID4.type, .isPublic)
-        
+
         // Throw when no PeerID is present
         XCTAssertThrowsError(try Multiaddr("/dnsaddr/bootstrap.libp2p.io/").getPeerIDActual())
     }
