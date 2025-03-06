@@ -24,46 +24,46 @@ final class MultiaddrPeerIDTests: XCTestCase {
     func testGetPeerID() throws {
         // B58 String
         let ma1 = try Multiaddr("/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN")
-        let peerID1 = try ma1.getPeerIDActual()
+        let peerID1 = try ma1.getPeerID()
 
         // B58 String
         let ma2 = try Multiaddr("/ip4/139.178.91.71/tcp/4001/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN")
-        let peerID2 = try ma2.getPeerIDActual()
+        let peerID2 = try ma2.getPeerID()
 
         // CID String
         let ma3 = try Multiaddr(
             "/dnsaddr/bootstrap.libp2p.io/p2p/bafzbeiagwnqiviaae5aet2zivwhhsorg75x2wka2pu55o7grr23ulx5kxm"
         )
-        let peerID3 = try ma3.getPeerIDActual()
+        let peerID3 = try ma3.getPeerID()
 
         XCTAssertEqual(peerID1, peerID2)
         XCTAssertEqual(peerID1, peerID3)
 
         // Embedded Public Key
         let ma4 = try Multiaddr("/dnsaddr/bootstrap.libp2p.io/p2p/12D3KooWAfPDpPRRRBrmqy9is2zjU5srQ4hKuZitiGmh4NTTpS2d")
-        let peerID4 = try ma4.getPeerIDActual()
+        let peerID4 = try ma4.getPeerID()
 
         XCTAssertEqual(peerID4.type, .isPublic)
 
         // Throw when no PeerID is present
-        XCTAssertThrowsError(try Multiaddr("/dnsaddr/bootstrap.libp2p.io/").getPeerIDActual())
+        XCTAssertThrowsError(try Multiaddr("/dnsaddr/bootstrap.libp2p.io/").getPeerID())
     }
 
     func testGetPeerIDEmbeddedEd25519PublicKey() throws {
         let ma1 = try Multiaddr("/dnsaddr/bootstrap.libp2p.io/p2p/12D3KooWAfPDpPRRRBrmqy9is2zjU5srQ4hKuZitiGmh4NTTpS2d")
 
-        let embeddedKeyInBytes = try BaseEncoding.decode(ma1.getPeerID()!, as: .base58btc)
+        let embeddedKeyInBytes = try BaseEncoding.decode(ma1.getPeerIDString()!, as: .base58btc)
         let peerID1 = try PeerID(fromBytesID: embeddedKeyInBytes.data.bytes)
 
         let ma2 = try Multiaddr("/dnsaddr/bootstrap.libp2p.io/p2p/12D3KooWAfPDpPRRRBrmqy9is2zjU5srQ4hKuZitiGmh4NTTpS2d")
-        let peerID2 = try ma2.getPeerIDActual()
+        let peerID2 = try ma2.getPeerID()
 
         XCTAssertEqual(peerID1, peerID2)
         XCTAssertEqual(peerID1.type, .isPublic)
         XCTAssertEqual(peerID2.type, .isPublic)
 
         let ma3 = try Multiaddr("/ip4/139.178.91.71/tcp/4001/p2p/QmPoHmYtUt8BU9eiwMYdBfT6rooBnna5fdAZHUaZASGQY8")
-        let peerID3 = try ma3.getPeerIDActual()
+        let peerID3 = try ma3.getPeerID()
 
         XCTAssertEqual(peerID3.type, .idOnly)
 

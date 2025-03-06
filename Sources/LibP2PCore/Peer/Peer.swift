@@ -34,6 +34,7 @@ import PeerID
 //    var addr:[Multiaddr] { get }
 //}
 
+/// A peer (PeerID) and their known addresses (Multiaddr)
 public struct PeerInfo {
     public let peer: PeerID
     public let addresses: [Multiaddr]
@@ -45,9 +46,10 @@ public struct PeerInfo {
 }
 
 extension Multiaddr {
-    // TODO: Rename this to getPeerID once https://github.com/swift-libp2p/swift-multiaddr/issues/14 is addressed
-    func getPeerIDActual() throws -> PeerID {
-        guard let cid = self.getPeerID() else {
+    /// Attempts to extract a PeerID from the Multiaddr if one is present
+    /// - Note: The returned PeerID is usually only an ID and doesn't contain a key pair. In some instances (ED25519 keys) a public key might be recoverable.
+    public func getPeerID() throws -> PeerID {
+        guard let cid = self.getPeerIDString() else {
             throw NSError(domain: "No CID present in Multiaddr", code: 0)
         }
         return try PeerID(cid: cid)
