@@ -103,7 +103,7 @@ func getPublicKey(_ store: ValueStore, peer: PeerID, on: EventLoop) -> EventLoop
 
     /// TODO: Implement ValueStore protocol ...
     return on.makeFailedFuture(RoutingErrors.notFound)
-    
+
     //let key = keyForPublicKey(id: peer)
     //return store.getValue(key: key).flatMapThrowing { pkval -> PublicKey in
     //    try PublicKey(fromMarshaledValue: pkval)
