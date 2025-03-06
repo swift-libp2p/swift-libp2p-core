@@ -139,11 +139,7 @@ extension Connection {
     }
 
     public var expectedRemotePeer: PeerID? {
-        //print("LibP2PCore:Connection:ERROR: FIXME!!!")
-        if let cid = self.remoteAddr?.getPeerID() {
-            return try? PeerID(cid: cid)
-        }
-        return nil
+        try? self.remoteAddr?.getPeerID()
     }
 }
 
