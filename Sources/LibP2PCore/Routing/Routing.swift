@@ -91,9 +91,9 @@ func keyForPublicKey(id: PeerID) -> String {
 }
 
 func getPublicKey(_ store: ValueStore, peer: PeerID, on: EventLoop) -> EventLoopFuture<PeerID> {
-    /// extractPublicKey will simply check if the Peer has a pubkey in it's keypair or if the pubkey is embedded in it's ID (in the case of Ed25519 keys)
-    if let pubKey = peer.extractPublicKey() {
-        return on.makeSucceededFuture(pubKey)
+    /// If the PeerID has a public key, just return it
+    if peer.keyPair?.publicKey != nil {
+        return on.makeSucceededFuture(peer)
     }
 
     /// If we have a DHT as our routing system, use optimized fetcher
@@ -101,10 +101,10 @@ func getPublicKey(_ store: ValueStore, peer: PeerID, on: EventLoop) -> EventLoop
         return dht.getPublicKey(peerID: peer.cidString)
     }
 
-    let key = keyForPublicKey(id: peer)
-
+    /// TODO: Implement ValueStore protocol ...
     return on.makeFailedFuture(RoutingErrors.notFound)
-    /// TODO: Figure out how to handle this...
+
+    //let key = keyForPublicKey(id: peer)
     //return store.getValue(key: key).flatMapThrowing { pkval -> PublicKey in
     //    try PublicKey(fromMarshaledValue: pkval)
     //}
