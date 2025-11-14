@@ -41,14 +41,6 @@ public struct SealedEnvelope: Envelope, Sendable {
     //signature []byte
     public let signature: [UInt8]
 
-    // the unmarshalled payload as a Record, cached on first access via the Record accessor method
-    //cached         Record
-    //unmarshalError error
-    //unmarshalOnce  sync.Once
-    lazy var cached: PeerRecord? = {
-        nil
-    }()
-
     /// Creates a new Signed & SealedEnvelope containing the specified Record, ready for marsahling and sending to remote peers...
     public init<R: Record>(record: R, signedWithKey key: PeerID) throws {
         guard let privKey = key.keyPair?.privateKey else {
@@ -61,13 +53,13 @@ public struct SealedEnvelope: Envelope, Sendable {
 
         self.rawPayload = try record.marshal()
 
-        self.signature = try privKey.sign(message: Data(record.unsignedPayload())).bytes
+        self.signature = try privKey.sign(message: Data(record.unsignedPayload())).byteArray
     }
 
     /// Takes a marshalled / serialized Envelope object
     public init(marshaledEnvelope bytes: [UInt8], verifiedWithPublicKey pubKey: [UInt8]? = nil) throws {
         //print("Attempting to instantiate a SealedEnvelope from marshaled data")
-        let env = try EnvelopeMessage(contiguousBytes: bytes)
+        let env = try EnvelopeMessage(serializedBytes: bytes)
         //print("We have an Envelope, attempting to extract PublicKey")
         if let pub = pubKey {
             self.pubKey = try PeerID(marshaledPublicKey: Data(pub))
@@ -83,11 +75,11 @@ public struct SealedEnvelope: Envelope, Sendable {
         }
 
         //print("We have a Public Key, proceeding with signature verification")
-        self.payloadType = env.payloadType.bytes
+        self.payloadType = env.payloadType.byteArray
 
-        self.rawPayload = env.payload.bytes
+        self.rawPayload = env.payload.byteArray
 
-        self.signature = env.signature.bytes
+        self.signature = env.signature.byteArray
 
         guard try verifySignature() else {
             throw Errors.invalidSignature
@@ -103,7 +95,7 @@ public struct SealedEnvelope: Envelope, Sendable {
         //pub.type = .rsa
         //pub.data = try pubKey.marshal()
         //env.publicKey = pub
-        env.publicKey = try EnvelopeMessage.PublicKey(contiguousBytes: pubKey.marshal())
+        env.publicKey = try EnvelopeMessage.PublicKey(serializedBytes: pubKey.marshal())
         //print("Envelope Marshalled PubKey:")
         //print(pub)
         env.payloadType = Data(self.payloadType)
