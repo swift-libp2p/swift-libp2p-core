@@ -90,6 +90,8 @@ func keyForPublicKey(id: PeerID) -> String {
     "/pk/" + id.b58String
 }
 
+// TODO: This should not be in the global namespace
+
 func getPublicKey(_ store: ValueStore, peer: PeerID, on: EventLoop) -> EventLoopFuture<PeerID> {
     /// If the PeerID has a public key, just return it
     if peer.keyPair?.publicKey != nil {
