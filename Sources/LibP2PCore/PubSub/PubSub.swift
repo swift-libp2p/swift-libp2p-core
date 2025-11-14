@@ -344,7 +344,7 @@ public protocol PeerStateProtocol: EventLoopService, PeerConnectionDelegate {
     func removePeer(_ peer: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
     func getAllPeers(on loop: EventLoop?) -> EventLoopFuture<[PubSub.Subscriber]>
     //func peerExists(_ peer:PeerID, atAddress address:Multiaddr, on loop:EventLoop?) -> EventLoopFuture<Bool>
-    
+
     // Attach inbound & outbound streams to existing peer
     func attachInboundStream(_ peer: PeerID, inboundStream: Stream, on: EventLoop?) -> EventLoopFuture<Void>
     func attachOutboundStream(_ peer: PeerID, outboundStream: Stream, on: EventLoop?) -> EventLoopFuture<Void>
@@ -361,7 +361,7 @@ public protocol PeerStateProtocol: EventLoopService, PeerConnectionDelegate {
 
     // Get a peers inbound / outbound streams
     func streamsFor(_ peer: PeerID, on: EventLoop?) -> EventLoopFuture<PubSub.Subscriber>
-    
+
     //func isFullPeer(_ peer:PeerID) -> EventLoopFuture<Bool>
     //func makeFullPeer(_ peer:PeerID, for topic:String) -> EventLoopFuture<Void>
     //func makeMetaPeer(_ peer:PeerID, for topic:String) -> EventLoopFuture<Void>

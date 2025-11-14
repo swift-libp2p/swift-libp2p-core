@@ -91,7 +91,7 @@ public final class PeerRecord: Record, Hashable, Sendable {
     public static func == (lhs: PeerRecord, rhs: PeerRecord) -> Bool {
         lhs.equals(rhs)
     }
-    
+
     public func hash(into hasher: inout Hasher) {
         hasher.combine(self.peerID.id)
         hasher.combine(self.multiaddrs)
