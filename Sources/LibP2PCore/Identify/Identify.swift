@@ -33,3 +33,13 @@ public protocol IdentityManager: Sendable {
     //func constructIdentifyMessage(req:Request) throws -> [UInt8]
 
 }
+
+extension IdentityManager {
+    public func ping(peer: PeerID) async throws -> TimeAmount {
+        try await self.ping(peer: peer).get()
+    }
+    
+    public func ping(addr: Multiaddr) async throws -> TimeAmount {
+        try await self.ping(addr: addr).get()
+    }
+}

@@ -106,6 +106,15 @@ extension PeerStore {
             self.add(addresses: peerInfo.addresses, toPeer: peerInfo.peer, on: on)
         }
     }
+    
+    /// Given a `PeerInfo` object this method adds both the `PeerID` and the associated `Multiaddr`s to the `PeerStore`.
+    /// - Parameters:
+    ///   - peerInfo: the `PeerInfo` object to store
+    ///   - on: An optional `EventLoop` to return on
+    /// - Returns: `Void` upon success, or error upon failure
+    public func add(peerInfo: PeerInfo, on: EventLoop? = nil) async throws {
+        try await self.add(peerInfo: peerInfo, on: on).get()
+    }
 
     public func getPeerInfo(byID id: String, on: EventLoop? = nil) -> EventLoopFuture<PeerInfo> {
         self.getKey(forPeer: id, on: on).flatMap { key in
@@ -113,6 +122,10 @@ extension PeerStore {
                 PeerInfo(peer: key, addresses: addresses)
             }
         }
+    }
+    
+    public func getPeerInfo(byID id: String, on: EventLoop? = nil) async throws -> PeerInfo {
+        try await self.getPeerInfo(byID: id, on: on).get()
     }
 }
 
