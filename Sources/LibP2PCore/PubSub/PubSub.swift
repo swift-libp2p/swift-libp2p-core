@@ -338,28 +338,13 @@ public protocol PeerConnectionDelegate {
 
 /// Use these protocols to abstract away the specifics for both PeerState and MessageCache
 /// Like FloodSub might have a basic implementation while GossipSub has a more complex one. Either way, PubSubBase shouldn't care.
-//public protocol PeerStateProtocol:EventLoopService, PeerConnectionDelegate {
-//    func addNewPeer(_ peer:PeerInfo) -> EventLoopFuture<Bool>
-//    func removePeer(_ peer:PeerID) -> EventLoopFuture<Void>
-//    func update(topics:[String], for peer:PeerID) -> EventLoopFuture<Void>
-//    func update(subscriptions:[String:Bool], for peer:PeerID) -> EventLoopFuture<Void>
-//    func peersSubscribedTo(topic:String, on loop:EventLoop?) -> EventLoopFuture<[PeerID]>
-//    func peersSubscribedTo2(topic:String, on loop:EventLoop?) -> EventLoopFuture<[(PeerID, Stream)]>
-//    func topicSubscriptions(on loop:EventLoop?) -> EventLoopFuture<[String]>
-//    func streamFor(_ peer:PeerID) -> EventLoopFuture<Stream>
-//    func isFullPeer(_ peer:PeerID) -> EventLoopFuture<Bool>
-//    func makeFullPeer(_ peer:PeerID, for topic:String) -> EventLoopFuture<Void>
-//    func makeMetaPeer(_ peer:PeerID, for topic:String) -> EventLoopFuture<Void>
-//    func subscribeSelf(to topic:String, on loop:EventLoop?) -> EventLoopFuture<[String]>
-//    func unsubscribeSelf(from topic:String, on loop:EventLoop?) -> EventLoopFuture<[String]>
-//    //func peerExists(_ peer:PeerID, atAddress address:Multiaddr, on loop:EventLoop?) -> EventLoopFuture<Bool>
-//}
-
 public protocol PeerStateProtocol: EventLoopService, PeerConnectionDelegate {
     // Add and Remove Peers
     func addNewPeer(_ peer: PeerID, on: EventLoop?) -> EventLoopFuture<Bool>
     func removePeer(_ peer: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
-
+    func getAllPeers(on loop: EventLoop?) -> EventLoopFuture<[PubSub.Subscriber]>
+    //func peerExists(_ peer:PeerID, atAddress address:Multiaddr, on loop:EventLoop?) -> EventLoopFuture<Bool>
+    
     // Attach inbound & outbound streams to existing peer
     func attachInboundStream(_ peer: PeerID, inboundStream: Stream, on: EventLoop?) -> EventLoopFuture<Void>
     func attachOutboundStream(_ peer: PeerID, outboundStream: Stream, on: EventLoop?) -> EventLoopFuture<Void>
@@ -370,15 +355,16 @@ public protocol PeerStateProtocol: EventLoopService, PeerConnectionDelegate {
     func update(topics: [String], for peer: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
     func update(subscriptions: [String: Bool], for peer: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
     func peersSubscribedTo(topic: String, on loop: EventLoop?) -> EventLoopFuture<[PubSub.Subscriber]>
-    func getAllPeers(on loop: EventLoop?) -> EventLoopFuture<[PubSub.Subscriber]>
     func topicSubscriptions(on loop: EventLoop?) -> EventLoopFuture<[String]>
     func subscribeSelf(to topic: String, on loop: EventLoop?) -> EventLoopFuture<[String]>
     func unsubscribeSelf(from topic: String, on loop: EventLoop?) -> EventLoopFuture<[String]>
 
     // Get a peers inbound / outbound streams
     func streamsFor(_ peer: PeerID, on: EventLoop?) -> EventLoopFuture<PubSub.Subscriber>
-
-    //func peerExists(_ peer:PeerID, atAddress address:Multiaddr, on loop:EventLoop?) -> EventLoopFuture<Bool>
+    
+    //func isFullPeer(_ peer:PeerID) -> EventLoopFuture<Bool>
+    //func makeFullPeer(_ peer:PeerID, for topic:String) -> EventLoopFuture<Void>
+    //func makeMetaPeer(_ peer:PeerID, for topic:String) -> EventLoopFuture<Void>
 }
 
 /// Use these protocols to abstract away the specifics for both PeerState and MessageCache
