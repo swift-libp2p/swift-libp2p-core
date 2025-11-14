@@ -15,7 +15,7 @@
 public final class PeerRecord: Record, Hashable, Sendable {
 
     //static let domain:String = "libp2p-peer-record"
-    static let codec: Codecs = .libp2p_peer_record  //.libp2p_peer_record
+    static let codec: Codecs = .libp2p_peer_record
 
     public let peerID: PeerID
     public let multiaddrs: [Multiaddr]
@@ -35,8 +35,8 @@ public final class PeerRecord: Record, Hashable, Sendable {
     }
 
     public init(marshaledData: Data) throws {
-        let pr = try PeerRecordMessage(contiguousBytes: marshaledData)
-        self.peerID = try PeerID(fromBytesID: pr.peerID.bytes)
+        let pr = try PeerRecordMessage(serializedBytes: marshaledData)
+        self.peerID = try PeerID(fromBytesID: pr.peerID.byteArray)
         self.multiaddrs = try pr.addresses.map {
             try Multiaddr($0.multiaddr)
         }
@@ -44,11 +44,11 @@ public final class PeerRecord: Record, Hashable, Sendable {
     }
 
     public init(marshaledData: Data, withPublicKey pubKey: Data) throws {
-        let pr = try PeerRecordMessage(contiguousBytes: marshaledData)
+        let pr = try PeerRecordMessage(serializedBytes: marshaledData)
         let validatingPubKey = try PeerID(marshaledPublicKey: pubKey)
-        guard pr.peerID.bytes == validatingPubKey.bytes else {
+        guard pr.peerID.byteArray == validatingPubKey.id else {
             print("Error: PubKey Bytes Don't Match")
-            print(pr.peerID.bytes.asString(base: .base16))
+            print(pr.peerID.byteArray.asString(base: .base16))
             print(validatingPubKey.b58String)
             throw Errors.noPublicKey
         }
@@ -72,14 +72,14 @@ public final class PeerRecord: Record, Hashable, Sendable {
 
     public func marshal() throws -> [UInt8] {
         var rec = PeerRecordMessage()
-        rec.peerID = Data(self.peerID.bytes)
+        rec.peerID = Data(self.peerID.id)
         rec.addresses = try self.multiaddrs.map {
             var addr = PeerRecordMessage.AddressInfo()
             addr.multiaddr = try $0.binaryPacked()
             return addr
         }
         rec.seq = self.sequenceNumber
-        return try rec.serializedData().bytes
+        return try rec.serializedData().byteArray
     }
 
     public func equals<R>(_ r: R) -> Bool where R: Record {
@@ -91,6 +91,11 @@ public final class PeerRecord: Record, Hashable, Sendable {
     public static func == (lhs: PeerRecord, rhs: PeerRecord) -> Bool {
         lhs.equals(rhs)
     }
+    
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(self.peerID.id)
+        hasher.combine(self.multiaddrs)
+    }
 
     public func seal(withPrivateKey key: PeerID) throws -> Envelope {
         try SealedEnvelope(record: self, signedWithKey: key)
@@ -101,7 +106,7 @@ public final class PeerRecord: Record, Hashable, Sendable {
     /// This also results in the Multicodec resolving to cidv3 instead of libp2p-peer-record during decoding.
     /// I guess for now we just use the hardcoded values...
     public func unsignedPayload() -> [UInt8] {
-        uVarIntLengthPrefixed(domain.data(using: .utf8)!.bytes)
+        uVarIntLengthPrefixed(domain.data(using: .utf8)!.byteArray)
             + uVarIntLengthPrefixed([0x03, 0x01])
             //+ uVarIntLengthPrefixed( Multicodec.getPrefix(multiCodec: PeerRecord.codec) )
             + uVarIntLengthPrefixed(try! self.marshal())
