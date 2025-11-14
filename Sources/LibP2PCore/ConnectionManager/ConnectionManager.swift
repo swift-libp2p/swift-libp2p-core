@@ -15,7 +15,7 @@
 import NIOCore
 
 /// - TODO: Remove Optional Return Value
-public protocol ConnectionManager {
+public protocol ConnectionManager: Sendable {
     func getConnections(on: EventLoop?) -> EventLoopFuture<[Connection]>
     func getConnectionsToPeer(peer: PeerID, on: EventLoop?) -> EventLoopFuture<[Connection]>
     func getBestConnectionForPeer(peer: PeerID, on: EventLoop?) -> EventLoopFuture<Connection?>
@@ -42,7 +42,7 @@ public protocol ConnectionManager {
 }
 
 /// Peer Connectedness
-public enum Connectedness {
+public enum Connectedness: Sendable {
     /// We have not yet attempted to connect to the peer in question
     case NotConnected
     /// We have an existing open connection to the peer in question

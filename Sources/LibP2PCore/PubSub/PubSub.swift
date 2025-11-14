@@ -16,7 +16,7 @@ import NIOCore
 
 public enum PubSub {
     /// ValidationResult represents the decision of an extended validator
-    public enum ValidationResult {
+    public enum ValidationResult: Sendable {
         /// Accept is a validation decision that indicates a valid message that should be accepted and delivered to the application and forwarded to the network.
         case accept
         /// Reject is a validation decision that indicates an invalid message that should not be delivered to the application or forwarded to the application. Furthermore the peer that forwarded the message should be penalized by peer scoring routers.
@@ -27,7 +27,7 @@ public enum PubSub {
         case throttle
     }
 
-    public enum SubscriptionEvent {
+    public enum SubscriptionEvent: Sendable {
         case newPeer(PeerID)
         case data(PubSubMessage)
         case error(Error)
@@ -41,7 +41,7 @@ public enum PubSub {
         }
     }
 
-    public struct SubscriptionConfig {
+    public struct SubscriptionConfig: Sendable {
         public let topic: String
         public let signaturePolicy: SignaturePolicy
         public let validator: ValidatorFunction
@@ -60,19 +60,19 @@ public enum PubSub {
         }
     }
 
-    public enum SignaturePolicy {
+    public enum SignaturePolicy: Sendable {
         case strictSign
         case strictNoSign
     }
 
-    public enum ValidatorFunction {
+    public enum ValidatorFunction: Sendable {
         /// Doesn't perform any Message Validation, accepts all inbound messages
         case acceptAll
         /// Perform custom Message Validation on each inbound message
         /// Ex: Rejecting messages based on their address, peerID or any other metric
-        case custom((_: PubSubMessage) -> Bool)
+        case custom(@Sendable (_: PubSubMessage) -> Bool)
 
-        public var validationFunction: ((_: PubSubMessage) -> Bool) {
+        public var validationFunction: (@Sendable (_: PubSubMessage) -> Bool) {
             switch self {
             case .acceptAll:
                 return { _ in true }
@@ -151,7 +151,7 @@ public enum PubSub {
         }
     }
 
-    public enum MessageIDFunction {
+    public enum MessageIDFunction: Sendable {
         /// Calculates a Message's ID by hashing the Message Sequence Number and the Message Sender
         case hashSequenceNumberAndFromFields
         /// Calculates a Message's ID by hashing the Sequence Number, Sender, Data and Topic fields
@@ -159,9 +159,9 @@ public enum PubSub {
         /// Simply concatenates the messages From data and Sequence Number (default message id function)
         case concatFromAndSequenceFields
         /// Specify your own custom method for generating a Message's ID
-        case custom((_: PubSubMessage) -> Data)
+        case custom(@Sendable (_: PubSubMessage) -> Data)
 
-        public var messageIDFunction: ((_: PubSubMessage) -> Data) {
+        public var messageIDFunction: (@Sendable (_: PubSubMessage) -> Data) {
             switch self {
             case .hashSequenceNumberAndFromFields:
                 return { message in
@@ -190,14 +190,14 @@ public enum PubSub {
     }
 
     public enum MessageState {
-        public enum FilterType {
+        public enum FilterType: Sendable {
             case known
             case unknown
             case full
         }
     }
 
-    public struct Subscriber {
+    public struct Subscriber: Sendable {
         public let id: PeerID
         public private(set) var inbound: Stream?
         public private(set) var outbound: Stream?
@@ -254,7 +254,7 @@ public enum PubSub {
 //    func messageID(_ msg:PubSubMessage) -> [UInt8]
 //}
 
-public protocol RPCMessageCore {
+public protocol RPCMessageCore: Sendable {
     var subs: [SubOptsCore] { get }
     var messages: [PubSubMessage] { get }
     //var control:ControlMessageCore { get }
@@ -262,12 +262,12 @@ public protocol RPCMessageCore {
 
 public protocol ControlMessageCore {}
 
-public protocol SubOptsCore {
+public protocol SubOptsCore: Sendable {
     var subscribe: Bool { get }
     var topicID: String { get }
 }
 
-public protocol PubSubMessage: CustomStringConvertible {
+public protocol PubSubMessage: CustomStringConvertible, Sendable {
     var from: Data { get }
     var data: Data { get }
     var seqno: Data { get }
@@ -291,7 +291,7 @@ extension PubSubMessage {
     }
 }
 
-public protocol PubSubCore: EventLoopService, AnyObject {
+public protocol PubSubCore: EventLoopService, AnyObject, Sendable {
     static var multicodec: String { get }
 
     func start() throws
@@ -338,27 +338,12 @@ public protocol PeerConnectionDelegate {
 
 /// Use these protocols to abstract away the specifics for both PeerState and MessageCache
 /// Like FloodSub might have a basic implementation while GossipSub has a more complex one. Either way, PubSubBase shouldn't care.
-//public protocol PeerStateProtocol:EventLoopService, PeerConnectionDelegate {
-//    func addNewPeer(_ peer:PeerInfo) -> EventLoopFuture<Bool>
-//    func removePeer(_ peer:PeerID) -> EventLoopFuture<Void>
-//    func update(topics:[String], for peer:PeerID) -> EventLoopFuture<Void>
-//    func update(subscriptions:[String:Bool], for peer:PeerID) -> EventLoopFuture<Void>
-//    func peersSubscribedTo(topic:String, on loop:EventLoop?) -> EventLoopFuture<[PeerID]>
-//    func peersSubscribedTo2(topic:String, on loop:EventLoop?) -> EventLoopFuture<[(PeerID, Stream)]>
-//    func topicSubscriptions(on loop:EventLoop?) -> EventLoopFuture<[String]>
-//    func streamFor(_ peer:PeerID) -> EventLoopFuture<Stream>
-//    func isFullPeer(_ peer:PeerID) -> EventLoopFuture<Bool>
-//    func makeFullPeer(_ peer:PeerID, for topic:String) -> EventLoopFuture<Void>
-//    func makeMetaPeer(_ peer:PeerID, for topic:String) -> EventLoopFuture<Void>
-//    func subscribeSelf(to topic:String, on loop:EventLoop?) -> EventLoopFuture<[String]>
-//    func unsubscribeSelf(from topic:String, on loop:EventLoop?) -> EventLoopFuture<[String]>
-//    //func peerExists(_ peer:PeerID, atAddress address:Multiaddr, on loop:EventLoop?) -> EventLoopFuture<Bool>
-//}
-
 public protocol PeerStateProtocol: EventLoopService, PeerConnectionDelegate {
     // Add and Remove Peers
     func addNewPeer(_ peer: PeerID, on: EventLoop?) -> EventLoopFuture<Bool>
     func removePeer(_ peer: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
+    func getAllPeers(on loop: EventLoop?) -> EventLoopFuture<[PubSub.Subscriber]>
+    //func peerExists(_ peer:PeerID, atAddress address:Multiaddr, on loop:EventLoop?) -> EventLoopFuture<Bool>
 
     // Attach inbound & outbound streams to existing peer
     func attachInboundStream(_ peer: PeerID, inboundStream: Stream, on: EventLoop?) -> EventLoopFuture<Void>
@@ -370,7 +355,6 @@ public protocol PeerStateProtocol: EventLoopService, PeerConnectionDelegate {
     func update(topics: [String], for peer: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
     func update(subscriptions: [String: Bool], for peer: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
     func peersSubscribedTo(topic: String, on loop: EventLoop?) -> EventLoopFuture<[PubSub.Subscriber]>
-    func getAllPeers(on loop: EventLoop?) -> EventLoopFuture<[PubSub.Subscriber]>
     func topicSubscriptions(on loop: EventLoop?) -> EventLoopFuture<[String]>
     func subscribeSelf(to topic: String, on loop: EventLoop?) -> EventLoopFuture<[String]>
     func unsubscribeSelf(from topic: String, on loop: EventLoop?) -> EventLoopFuture<[String]>
@@ -378,7 +362,9 @@ public protocol PeerStateProtocol: EventLoopService, PeerConnectionDelegate {
     // Get a peers inbound / outbound streams
     func streamsFor(_ peer: PeerID, on: EventLoop?) -> EventLoopFuture<PubSub.Subscriber>
 
-    //func peerExists(_ peer:PeerID, atAddress address:Multiaddr, on loop:EventLoop?) -> EventLoopFuture<Bool>
+    //func isFullPeer(_ peer:PeerID) -> EventLoopFuture<Bool>
+    //func makeFullPeer(_ peer:PeerID, for topic:String) -> EventLoopFuture<Void>
+    //func makeMetaPeer(_ peer:PeerID, for topic:String) -> EventLoopFuture<Void>
 }
 
 /// Use these protocols to abstract away the specifics for both PeerState and MessageCache

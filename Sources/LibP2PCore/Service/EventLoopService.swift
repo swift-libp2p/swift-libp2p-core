@@ -35,7 +35,7 @@ extension EventLoopService {
     }
 }
 
-public enum ServiceLifecycleState {
+public enum ServiceLifecycleState: Sendable {
     case starting
     case started
     case stopping

@@ -24,7 +24,7 @@ import PeerID
 /// - Libp2p Connection ≈ Swift NIO Client (or maybe Libp2p Transport is more akin to the Client, and Channel is a parent wrapper that handles meta data surrounding the client, streams and peer)
 ///
 /// [LibP2P Connection Interface Documentation](https://github.com/libp2p/js-libp2p-interfaces/tree/master/src/connection)
-public protocol Connection: AnyObject {
+public protocol Connection: AnyObject, Sendable {
 
     typealias NegotiationResult = (protocol: String, leftoverBytes: ByteBuffer?)
     typealias SecuredResult = (securityCodec: String, remotePeer: PeerID?, warning: SecurityWarnings?)
@@ -173,7 +173,7 @@ public class ConnectionStats: CustomStringConvertible {
         case closing
         case closed
     }
-    public enum Direction {
+    public enum Direction: Sendable {
         case inbound
         case outbound
     }

@@ -16,7 +16,7 @@ import Multiaddr
 import NIOCore
 import PeerID
 
-enum RoutingErrors: Error {
+enum RoutingErrors: Error, Sendable {
     /// ErrNotFound is returned when the router fails to find the requested record.
     case notFound
     /// ErrNotSupported is returned when the router doesn't support the given record type/operation.
@@ -89,6 +89,8 @@ internal enum _Routing {
 func keyForPublicKey(id: PeerID) -> String {
     "/pk/" + id.b58String
 }
+
+// TODO: This should not be in the global namespace
 
 func getPublicKey(_ store: ValueStore, peer: PeerID, on: EventLoop) -> EventLoopFuture<PeerID> {
     /// If the PeerID has a public key, just return it

@@ -32,7 +32,7 @@ let package = Package(
     ...
     dependencies: [
         ...
-        .package(name: "LibP2PCore", url: "https://github.com/swift-libp2p/swift-libp2p-core.git", .upToNextMajor(from: "0.0.1"))
+        .package(name: "LibP2PCore", url: "https://github.com/swift-libp2p/swift-libp2p-core.git", .upToNextMinor(from: "0.4.0"))
     ],
         ...
         .target(
@@ -55,7 +55,7 @@ check out the [tests]() for more examples
 
 import LibP2PCore
 
-// You now have access to thing like PeerID, Multiaddr, Connections, Swift-NIO, etc...
+// You now have access to core components like PeerID, Multiaddr, Connections, Swift-NIO, etc...
 
 ```
 

@@ -12,16 +12,17 @@
 //
 //===----------------------------------------------------------------------===//
 
-import XCTest
+import Testing
 
 @testable import LibP2PCore
 
 // These Multiaddr <-> PeerID tests are located here in swift-libp2p-core because
 // this is the first package in our stack that depends on the two of them
-final class MultiaddrPeerIDTests: XCTestCase {
+@Suite("Multiaddr PeerID Tests")
+struct MultiaddrPeerIDTests {
 
     // Make sure we can extract a PeerID from a Multiaddr
-    func testGetPeerID() throws {
+    @Test func testGetPeerID() throws {
         // B58 String
         let ma1 = try Multiaddr("/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN")
         let peerID1 = try ma1.getPeerID()
@@ -36,37 +37,37 @@ final class MultiaddrPeerIDTests: XCTestCase {
         )
         let peerID3 = try ma3.getPeerID()
 
-        XCTAssertEqual(peerID1, peerID2)
-        XCTAssertEqual(peerID1, peerID3)
+        #expect(peerID1 == peerID2)
+        #expect(peerID1 == peerID3)
 
         // Embedded Public Key
         let ma4 = try Multiaddr("/dnsaddr/bootstrap.libp2p.io/p2p/12D3KooWAfPDpPRRRBrmqy9is2zjU5srQ4hKuZitiGmh4NTTpS2d")
         let peerID4 = try ma4.getPeerID()
 
-        XCTAssertEqual(peerID4.type, .isPublic)
+        #expect(peerID4.type == .isPublic)
 
         // Throw when no PeerID is present
-        XCTAssertThrowsError(try Multiaddr("/dnsaddr/bootstrap.libp2p.io/").getPeerID())
+        #expect(throws: Error.self) { try Multiaddr("/dnsaddr/bootstrap.libp2p.io/").getPeerID() }
     }
 
-    func testGetPeerIDEmbeddedEd25519PublicKey() throws {
+    @Test func testGetPeerIDEmbeddedEd25519PublicKey() throws {
         let ma1 = try Multiaddr("/dnsaddr/bootstrap.libp2p.io/p2p/12D3KooWAfPDpPRRRBrmqy9is2zjU5srQ4hKuZitiGmh4NTTpS2d")
 
         let embeddedKeyInBytes = try BaseEncoding.decode(ma1.getPeerIDString()!, as: .base58btc)
-        let peerID1 = try PeerID(fromBytesID: embeddedKeyInBytes.data.bytes)
+        let peerID1 = try PeerID(fromBytesID: embeddedKeyInBytes.data.byteArray)
 
         let ma2 = try Multiaddr("/dnsaddr/bootstrap.libp2p.io/p2p/12D3KooWAfPDpPRRRBrmqy9is2zjU5srQ4hKuZitiGmh4NTTpS2d")
         let peerID2 = try ma2.getPeerID()
 
-        XCTAssertEqual(peerID1, peerID2)
-        XCTAssertEqual(peerID1.type, .isPublic)
-        XCTAssertEqual(peerID2.type, .isPublic)
+        #expect(peerID1 == peerID2)
+        #expect(peerID1.type == .isPublic)
+        #expect(peerID2.type == .isPublic)
 
         let ma3 = try Multiaddr("/ip4/139.178.91.71/tcp/4001/p2p/QmPoHmYtUt8BU9eiwMYdBfT6rooBnna5fdAZHUaZASGQY8")
         let peerID3 = try ma3.getPeerID()
 
-        XCTAssertEqual(peerID3.type, .idOnly)
+        #expect(peerID3.type == .idOnly)
 
-        XCTAssertEqual(peerID1, peerID3)
+        #expect(peerID1 == peerID3)
     }
 }

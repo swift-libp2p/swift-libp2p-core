@@ -35,7 +35,7 @@ import PeerID
 //}
 
 /// A peer (PeerID) and their known addresses (Multiaddr)
-public struct PeerInfo {
+public struct PeerInfo: Sendable {
     public let peer: PeerID
     public let addresses: [Multiaddr]
 
@@ -53,5 +53,18 @@ extension Multiaddr {
             throw NSError(domain: "No CID present in Multiaddr", code: 0)
         }
         return try PeerID(cid: cid)
+    }
+}
+
+extension PeerInfo: CustomStringConvertible {
+    public var description: String {
+        if self.addresses.isEmpty {
+            return self.peer.description
+        }
+        return """
+            \(self.peer) [
+            \(self.addresses.map({ $0.description }).joined(separator: "\n") )
+            ]
+            """
     }
 }

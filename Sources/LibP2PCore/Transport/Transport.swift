@@ -65,7 +65,7 @@ public enum TransportConfig {}
 /// `Close`.
 ///
 /// For a conceptual overview, see https://docs.libp2p.io/concepts/transport/
-public protocol Transport: CustomStringConvertible {
+public protocol Transport: CustomStringConvertible, Sendable {
     /// The transports Uniqe key descriptor
     static var key: String { get }
 

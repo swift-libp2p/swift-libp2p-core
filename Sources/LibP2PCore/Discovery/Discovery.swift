@@ -17,37 +17,33 @@ import NIOCore
 import PeerID
 
 /// Advertiser is an interface for advertising services
-public protocol Advertiser {
+public protocol Advertiser: Sendable {
     /// Advertise advertises a service on the specified protocol and returns the registration TTL upon successful registration
-    ///
-    /// - TODO: Add in options
     func advertise(service: String, options: Options?) -> EventLoopFuture<TimeAmount>
 }
 
 /// Discoverer is an interface for peer discovery
-public protocol Discoverer {
+public protocol Discoverer: Sendable {
     /// FindPeers discovers peers providing a service
-    ///
-    /// - TODO: Add in options
     func findPeers(supportingService: String, options: Options?) -> EventLoopFuture<DiscoverdPeers>
 
     /// Allows LibP2P to register a callback / event handler on the Discovery mechanism to be alerted of various events, such as peer discovery.
-    var onPeerDiscovered: ((_ peerInfo: PeerInfo) -> Void)? { get set }
+    var onPeerDiscovered: (@Sendable (_ peerInfo: PeerInfo) -> Void)? { get set }
 }
 
 /// Discovery is an interface that combines service advertisement and peer discovery
-public protocol Discovery: Advertiser, Discoverer {
+public protocol Discovery: Advertiser, Discoverer, Sendable {
     static var key: String { get }
 }
 
-public protocol PeerDiscovery: EventLoopService {
+public protocol PeerDiscovery: EventLoopService, Sendable {
     /// Allows LibP2P to register a callback / event handler on the Discovery mechanism to be alerted of various events, such as peer discovery.
-    var on: ((_ event: PeerDiscoveryEvent) -> Void)? { get set }
+    var on: (@Sendable (_ event: PeerDiscoveryEvent) -> Void)? { get set }
     /// Allows LibP2P to query the Discovery mechanism for all of the peers it has encountered so far
     func knownPeers() -> EventLoopFuture<[PeerInfo]>
 }
 
-public protocol Options {
+public protocol Options: Sendable {
     /// TTL is an option that provides a hint for the duration of an advertisement
     var ttl: TimeAmount { get }
     /// Limit is an option that provides an upper bound on the peer count for discovery
@@ -65,7 +61,7 @@ public struct StandardOptions: Options {
     public var limit: Int
 }
 
-public struct DiscoverdPeers {
+public struct DiscoverdPeers: Sendable {
     public let cookie: Data?
     public let peers: [PeerInfo]
 
