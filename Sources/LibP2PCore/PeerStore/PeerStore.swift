@@ -13,22 +13,81 @@
 //===----------------------------------------------------------------------===//
 
 import NIOCore
+import NIOConcurrencyHelpers
 
 public typealias Metadata = [String: [UInt8]]
 
-public final class ComprehensivePeer {
-    public var id: PeerID
-    public var addresses: [Multiaddr] = []
-    public var protocols: [SemVerProtocol] = []
-    public var metadata: Metadata = [:]
-    public var records: [PeerRecord] = []
+public final class ComprehensivePeer: Sendable {
+    public let id: PeerID
+    
+    public var addresses: Set<Multiaddr> {
+        get { _addresses.withLockedValue { $0 } }
+        set { _addresses.withLockedValue { $0 = newValue } }
+    }
+    private let _addresses: NIOLockedValueBox<Set<Multiaddr>>
+    
+    public var protocols: Set<SemVerProtocol> {
+        get { _protocols.withLockedValue { $0 } }
+        set { _protocols.withLockedValue { $0 = newValue } }
+    }
+    private let _protocols: NIOLockedValueBox<Set<SemVerProtocol>>
+    
+    public var metadata: Metadata {
+        get { _metadata.withLockedValue { $0 } }
+        set { _metadata.withLockedValue { $0 = newValue } }
+    }
+    private let _metadata: NIOLockedValueBox<Metadata>
+    
+    public var records: Set<PeerRecord> {
+        get { _records.withLockedValue { $0 } }
+        set { _records.withLockedValue { $0 = newValue } }
+    }
+    private let _records: NIOLockedValueBox<Set<PeerRecord>>
 
-    public init(id: PeerID) {
+    public init(id: PeerID, addresses: Set<Multiaddr> = [], protocols: Set<SemVerProtocol> = [], metadata: Metadata = [:], records: Set<PeerRecord> = []) {
         self.id = id
+        self._addresses = .init(addresses)
+        self._protocols = .init(protocols)
+        self._metadata = .init(metadata)
+        self._records = .init(records)
+    }
+    
+    //public func add(address: Multiaddr) {
+    //    self._addresses.withLockedValue { $0.insert(address) }
+    //}
+    //
+    //public func add(protocol: SemVerProtocol) {
+    //    self._protocols.withLockedValue { $0.insert(`protocol`) }
+    //}
+    //
+    //public func addMetadata(key: String, value: [UInt8]) {
+    //    self._metadata.withLockedValue { $0[key] = value }
+    //}
+    //
+    //public func add(record: PeerRecord) {
+    //    self._records.withLockedValue { $0.insert(record) }
+    //}
+}
+
+extension ComprehensivePeer: CustomStringConvertible {
+    public var description: String {
+        let header = "--- 👥 \(self.id) 👥 ---"
+        return """
+            \(header)
+            ☎️ Addresses:
+            \t- \(self.addresses.map { $0.description }.joined(separator: "\n\t- "))
+            📒 Protocols:
+            \t- \(self.protocols.map { $0.stringValue }.joined(separator: "\n\t- "))
+            ℹ️ MetaData:
+            \t- \(self.metadata.map { "\($0.key) - \(String(data: Data($0.value), encoding: .utf8) ?? $0.value.description)" }.joined(separator: "\n\t- "))
+            📜 Records:
+            \t\(self.records.map { "\($0.description.replacingOccurrences(of: "\n", with: "\n\t"))" }.joined(separator: "\n\t"))
+            \(String(repeating: "-", count: header.count + 2))
+            """
     }
 }
 
-public protocol PeerStore: KeyRepository, AddressRepository, ProtocolRepository, MetadataRepository, RecordRepository {
+public protocol PeerStore: KeyRepository, AddressRepository, ProtocolRepository, MetadataRepository, RecordRepository, Sendable {
     func all() -> EventLoopFuture<[ComprehensivePeer]>
     func count() -> EventLoopFuture<Int>
     func dump(peer: PeerID)
@@ -167,8 +226,8 @@ extension ProtocolRepository {
     }
 }
 
-public struct MetadataBook {
-    public enum Keys: String {
+public struct MetadataBook: Sendable {
+    public enum Keys: String, Sendable {
         case AgentVersion = "agentVersion"
         case ProtocolVersion = "protocolVersion"
         case Latency = "latency"
@@ -178,7 +237,7 @@ public struct MetadataBook {
         case Discovered = "discovered"
     }
 
-    public struct LatencyMetadata: Codable, CustomStringConvertible {
+    public struct LatencyMetadata: Codable, CustomStringConvertible, Sendable {
         public var streamLatency: UInt64
         public var connectionLatency: UInt64
         public var streamCount: UInt64
@@ -215,8 +274,8 @@ public struct MetadataBook {
         }
     }
 
-    public struct PrunableMetadata: Codable, CustomStringConvertible {
-        public enum Prunable: UInt8, Codable {
+    public struct PrunableMetadata: Codable, CustomStringConvertible, Sendable {
+        public enum Prunable: UInt8, Codable, Sendable {
             case prunable = 0
             case preferred
             case necessary

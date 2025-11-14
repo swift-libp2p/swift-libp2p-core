@@ -22,7 +22,7 @@ import SwiftProtobuf
 // string specified when creating and verifying the envelope. You must know the
 // domain string used to produce the envelope in order to verify the signature
 // and access the payload.
-public final class SealedEnvelope: Envelope {
+public struct SealedEnvelope: Envelope, Sendable {
 
     // The public key that can be used to verify the signature and derive the peer id of the signer.
     //PublicKey crypto.PubKey

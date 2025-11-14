@@ -13,7 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 /// PrivKey represents a private key that can be used to generate a public key and sign data
-public protocol PrivateKey {
+public protocol PrivateKey: Sendable {
     var key: [UInt8] { get }
 
     /// Cryptographically sign the given bytes
@@ -24,7 +24,7 @@ public protocol PrivateKey {
 }
 
 /// PubKey is a public key that can be used to verifiy data signed with the corresponding private key
-public protocol PublicKey {
+public protocol PublicKey: Sendable {
     var key: [UInt8] { get }
 
     /// Verify that 'sig' is the signed hash of 'data'

@@ -35,7 +35,7 @@ import PeerID
 //}
 
 /// A peer (PeerID) and their known addresses (Multiaddr)
-public struct PeerInfo {
+public struct PeerInfo: Sendable {
     public let peer: PeerID
     public let addresses: [Multiaddr]
 

@@ -12,7 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-public final class PeerRecord: Record {
+public final class PeerRecord: Record, Hashable, Sendable {
 
     //static let domain:String = "libp2p-peer-record"
     static let codec: Codecs = .libp2p_peer_record  //.libp2p_peer_record

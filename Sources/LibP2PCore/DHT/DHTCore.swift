@@ -31,7 +31,7 @@ public protocol DHTCore: Discovery, EventLoopService {
 
 }
 
-public protocol DHTRecord {
+public protocol DHTRecord: Sendable {
     var key: Data { get }
     var value: Data { get }
     var author: Data { get }

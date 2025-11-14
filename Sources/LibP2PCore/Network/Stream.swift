@@ -14,7 +14,7 @@
 
 import NIOCore
 
-public protocol Stream: AnyObject {
+public protocol Stream: AnyObject, Sendable {
     /// The underlying connection this stream belongs to
     /// - Important: This must be a weakly held reference to our parent Connection
     var connection: Connection? { get }
@@ -51,7 +51,7 @@ public protocol Stream: AnyObject {
     func write(_ buffer: ByteBuffer) -> EventLoopFuture<Void>
 
     /// A method that gets called when Stream Events are triggered
-    var on: ((LibP2PCore.StreamEvent) -> EventLoopFuture<Void>)? { get set }
+    var on: (@Sendable (LibP2PCore.StreamEvent) -> EventLoopFuture<Void>)? { get set }
     //func on(_ event:LibP2P.StreamEvent) -> EventLoopFuture<Void>
 
     /// Requests the Stream be closed on our end
@@ -83,8 +83,8 @@ public protocol _Stream: Stream {
     /// The underlying connection this stream belongs to
     /// - Important: This must be a weakly held reference to our parent Connection
     /// Holding a reference to the parent Connection object, gives us a bridge to accessing the channel in order to kick off writes and access the channels allocater, etc...
-    var _connection: Connection? { get set }
-    var _streamState: LibP2PCore.StreamState { get set }
+    var _connection: NIOLockedValueBox<Connection?> { get }
+    var _streamState: NIOLockedValueBox<LibP2PCore.StreamState> { get }
     var mode: LibP2PCore.Mode { get }
     //var _channel:Channel? { get }
 }
@@ -223,7 +223,7 @@ public final class StreamHandler {
     }
 }
 
-public enum StreamState: UInt8 {
+public enum StreamState: UInt8, Sendable {
     case initialized = 0
     case open
     case receiveClosed

@@ -22,7 +22,7 @@
 
 //public protocol Codecs { }
 
-public enum Mode: String {
+public enum Mode: String, Sendable {
     case initiator
     case listener
 }

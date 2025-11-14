@@ -21,13 +21,13 @@ struct ID {
     static let Testing = "/p2p/_testing"
 }
 
-public protocol LibP2PProtocol {
+public protocol LibP2PProtocol: Sendable {
     var proto: String { get }
     var stringValue: String { get }
     var version: SemanticVersion { get }
 }
 
-public protocol SemanticVersion {
+public protocol SemanticVersion: Sendable {
     var stringValue: String { get }
 }
 
@@ -65,7 +65,7 @@ public final class ProtocolRouteHandler: ChannelInboundHandler {
     }
 }
 
-public protocol ProtocolHandler {
+public protocol ProtocolHandler: Sendable {
     func handleData(_ data: [UInt8]) -> EventLoopFuture<Void>
     func write(_ data: [UInt8])
 }
@@ -73,8 +73,8 @@ public protocol ProtocolHandler {
 /// Semantic Versioning 2.0.0
 ///
 /// [Spec](https://semver.org/#semantic-versioning-200)
-public struct SemVerProtocol: Equatable {
-    public enum SemVersion: Equatable {
+public struct SemVerProtocol: Equatable, Hashable, Sendable {
+    public enum SemVersion: Equatable, Hashable, Sendable {
         case exact(ProtocolVersion)
         case from(ProtocolVersion)
         case upToNextMinor(ProtocolVersion)
@@ -125,7 +125,7 @@ public struct SemVerProtocol: Equatable {
 
     }
 
-    public struct ProtocolVersion: Equatable {
+    public struct ProtocolVersion: Equatable, Hashable, Sendable {
         let major: Int
         let minor: Int
         let patch: Int

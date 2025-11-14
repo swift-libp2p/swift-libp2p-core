@@ -15,7 +15,7 @@
 import Multiaddr
 import PeerID
 
-public protocol Record: Equatable {
+public protocol Record: Equatable, Sendable {
     var peerID: PeerID { get }
     var multiaddrs: [Multiaddr] { get }
     var sequenceNumber: UInt64 { get }
@@ -44,7 +44,7 @@ public protocol Record: Equatable {
 }
 
 /// An Envelope contains a signed Record
-public protocol Envelope: CustomStringConvertible {
+public protocol Envelope: CustomStringConvertible, Sendable {
     var pubKey: PeerID { get }
 
     var payloadType: [UInt8] { get }
@@ -82,7 +82,7 @@ public protocol Envelope: CustomStringConvertible {
     func marshal() throws -> [UInt8]
 }
 
-public enum Errors: Error, CustomStringConvertible {
+public enum Errors: Error, CustomStringConvertible, Sendable {
     case noPrivateKey
     case noPublicKey
     case emptyDomain

@@ -16,7 +16,7 @@ import Multiaddr
 import NIOCore
 import PeerID
 
-enum RoutingErrors: Error {
+enum RoutingErrors: Error, Sendable {
     /// ErrNotFound is returned when the router fails to find the requested record.
     case notFound
     /// ErrNotSupported is returned when the router doesn't support the given record type/operation.

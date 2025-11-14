@@ -40,19 +40,19 @@ public protocol Topology {
 }
 
 /// An optional Object containing the handler called when a peer is connected or disconnected
-public struct TopologyHandler {
+public struct TopologyHandler: Sendable {
     /// called everytime a peer is connected in the topology context.
-    public let onConnect: (PeerID, Connection) -> Void
+    public let onConnect: @Sendable (PeerID, Connection) -> Void
 
-    public let onNewStream: ((Stream) -> Void)?
+    public let onNewStream: (@Sendable (Stream) -> Void)?
 
     /// called everytime a peer is disconnected in the topology context.
-    public let onDisconnect: ((PeerID) -> Void)?
+    public let onDisconnect: (@Sendable (PeerID) -> Void)?
 
     public init(
-        onConnect: @escaping ((PeerID, Connection) -> Void),
-        onNewStream: ((Stream) -> Void)? = nil,
-        onDisconnect: ((PeerID) -> Void)? = nil
+        onConnect: @escaping (@Sendable (PeerID, Connection) -> Void),
+        onNewStream: (@Sendable (Stream) -> Void)? = nil,
+        onDisconnect: (@Sendable (PeerID) -> Void)? = nil
     ) {
         self.onConnect = onConnect
         self.onNewStream = onNewStream
