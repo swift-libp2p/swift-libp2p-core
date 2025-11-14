@@ -55,3 +55,16 @@ extension Multiaddr {
         return try PeerID(cid: cid)
     }
 }
+
+extension PeerInfo: CustomStringConvertible {
+    public var description: String {
+        if self.addresses.isEmpty {
+            return self.peer.description
+        }
+        return """
+            \(self.peer) [
+            \(self.addresses.map({ $0.description }).joined(separator: "\n") )
+            ]
+            """
+    }
+}
