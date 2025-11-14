@@ -35,16 +35,16 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-nio.git", .upToNextMajor(from: "2.0.0")),
 
         // LibP2P Peer Identities
-        .package(url: "https://github.com/swift-libp2p/swift-peer-id.git", .upToNextMinor(from: "0.1.0")),
+        .package(url: "https://github.com/swift-libp2p/swift-peer-id.git", .upToNextMinor(from: "0.2.0")),
 
         // LibP2P Multiaddr
-        .package(url: "https://github.com/swift-libp2p/swift-multiaddr.git", .upToNextMinor(from: "0.1.0")),
+        .package(url: "https://github.com/swift-libp2p/swift-multiaddr.git", .upToNextMinor(from: "0.2.0")),
 
         // Logging
-        .package(url: "https://github.com/apple/swift-log.git", .upToNextMajor(from: "1.0.0")),
+        .package(url: "https://github.com/apple/swift-log.git", .upToNextMajor(from: "1.6.0")),
 
         // Swift Protobuf
-        //.package(url: "https://github.com/apple/swift-protobuf.git", .exact("1.19.0")),
+        .package(url: "https://github.com/apple/swift-protobuf.git", .upToNextMajor(from: "1.33.3")),
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
@@ -56,7 +56,7 @@ let package = Package(
                 .product(name: "Logging", package: "swift-log"),
                 .product(name: "PeerID", package: "swift-peer-id"),
                 .product(name: "Multiaddr", package: "swift-multiaddr"),
-                //.product(name: "SwiftProtobuf", package: "swift-protobuf"),
+                .product(name: "SwiftProtobuf", package: "swift-protobuf"),
             ]
         ),
         .testTarget(
