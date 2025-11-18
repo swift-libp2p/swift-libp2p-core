@@ -273,7 +273,7 @@ public enum ConnectionState: Sendable {
     case closed
 }
 
-public enum ConnectionEvent {
+public enum ConnectionEvent: Sendable {
     case initialized
     case dialing
     //case state(Transport)
