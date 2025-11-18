@@ -265,7 +265,7 @@ public class ConnectionStats: CustomStringConvertible {
     }
 }
 
-public enum ConnectionState {
+public enum ConnectionState: Sendable {
     case raw
     case secured
     case muxed
