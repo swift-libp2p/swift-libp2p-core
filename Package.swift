@@ -60,7 +60,7 @@ let package = Package(
             ],
             resources: [
                 .copy("Protobufs/Envelope.proto"),
-                .copy("Protobufs/PeerRecord.proto")
+                .copy("Protobufs/PeerRecord.proto"),
             ]
         ),
         .testTarget(
