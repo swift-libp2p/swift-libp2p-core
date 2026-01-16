@@ -57,6 +57,10 @@ let package = Package(
                 .product(name: "PeerID", package: "swift-peer-id"),
                 .product(name: "Multiaddr", package: "swift-multiaddr"),
                 .product(name: "SwiftProtobuf", package: "swift-protobuf"),
+            ],
+            resources: [
+                .copy("Protobufs/Envelope.proto"),
+                .copy("Protobufs/PeerRecord.proto")
             ]
         ),
         .testTarget(
