@@ -142,10 +142,6 @@ public enum PubSub {
             let _ = ps.unsubscribe(topic: self.topic, on: nil)
         }
 
-        func makeSucceededVoidFuture() -> EventLoopFuture<Void> {
-            (self.pubsub?.eventLoop.makeSucceededVoidFuture())!
-        }
-
         public enum Errors: Error {
             case subscriptionNotAvailable
         }
