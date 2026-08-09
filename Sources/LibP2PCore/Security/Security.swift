@@ -17,7 +17,7 @@ import PeerID
 
 public protocol Security {}
 
-public enum SecurityWarnings: Error {
+public enum SecurityWarnings: Error, Sendable {
     case expectedPeerMismatch
     case skippedRemotePeerValidation
 }

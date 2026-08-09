@@ -16,7 +16,7 @@ import Multiaddr
 
 /// AddrAction represents an action taken on one of a Host's listen addresses.
 /// It is used to add context to address change events in EvtLocalAddressesUpdated.
-public enum AddressAction {
+public enum AddressAction: Sendable {
 
     /// Added means that the address is new and was not present prior to the event.
     case added
@@ -32,7 +32,7 @@ public enum AddressAction {
 }
 
 /// UpdatedAddress is used in the EvtLocalAddressesUpdated event to convey address change information.
-public struct UpdatedAddresses {
+public struct UpdatedAddresses: Sendable {
 
     /// Address contains the address that was updated.
     let address: Multiaddr
@@ -66,7 +66,7 @@ public struct UpdatedAddresses {
 /// for the Current set of listen addresses, wrapped in a record.Envelope and signed by the Host's private key.
 /// This record can be shared with other peers to inform them of what we believe are our  diallable addresses
 /// a secure and authenticated way.
-public struct LocalAddressesUpdated: Event {
+public struct LocalAddressesUpdated: Event, Sendable {
 
     /// Diffs indicates whether this event contains a diff of the Host's previous address set.
     let diffs: Bool
