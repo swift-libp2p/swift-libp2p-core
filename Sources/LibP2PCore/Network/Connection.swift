@@ -15,6 +15,7 @@
 import Foundation
 import Logging
 import Multiaddr
+import NIOConcurrencyHelpers
 import NIOCore
 import PeerID
 
@@ -164,9 +165,14 @@ public protocol ConnectionDelegate {
 }
 
 /// Connection Metadata
-public class ConnectionStats: CustomStringConvertible {
-    typealias Time = Date
-    public enum Status {
+///
+/// - Note: `ConnectionStats` is a *checked* `Sendable` reference type: all of its mutable state
+///   (status, encryption, muxer codec, and the timeline timestamps) lives behind a single
+///   `NIOLockedValueBox`, so the public `var` accessors are individually thread-safe. (It is still
+///   event-loop-confined in practice; the lock exists to satisfy `Sendable` without forcing every
+///   caller onto one loop.)
+public final class ConnectionStats: CustomStringConvertible, Sendable {
+    public enum Status: Sendable {
         case opening
         case open
         case upgraded
@@ -177,15 +183,21 @@ public class ConnectionStats: CustomStringConvertible {
         case inbound
         case outbound
     }
-    public class Timeline {
-        let opening: Time
-        var opened: Time?
-        var upgraded: Time?
-        var closing: Time?
-        var closed: Time?
 
-        /// Initializes a new Timeline by setting the `opening ` variable to the current date.
-        init() { self.opening = Time() }
+    /// A point-in-time snapshot of a connection's lifecycle timestamps.
+    ///
+    /// - Note: This became a `Sendable` value type (was a class) as part of making `ConnectionStats`
+    ///   checked-`Sendable`. `ConnectionStats.timeline` returns a snapshot; mutation happens through
+    ///   `ConnectionStats.status`.
+    public struct Timeline: Sendable {
+        public internal(set) var opening: Date
+        public internal(set) var opened: Date?
+        public internal(set) var upgraded: Date?
+        public internal(set) var closing: Date?
+        public internal(set) var closed: Date?
+
+        /// Initializes a new Timeline by setting the `opening` timestamp to the current date.
+        init() { self.opening = Date() }
 
         public var description: String {
             var entries: [String] = ["Connection Timeline:"]
@@ -198,7 +210,7 @@ public class ConnectionStats: CustomStringConvertible {
         }
 
         public var history: [Status: Date] {
-            var hist: [Status: Time] = [.opening: opening]
+            var hist: [Status: Date] = [.opening: opening]
             if let opened = opened { hist[.open] = opened }
             if let upgraded = upgraded { hist[.upgraded] = upgraded }
             if let closing = closing { hist[.closing] = closing }
@@ -207,22 +219,30 @@ public class ConnectionStats: CustomStringConvertible {
         }
     }
 
+    /// The mutable state, guarded so `ConnectionStats` is checked-`Sendable`.
+    private struct State {
+        var status: Status
+        var encryption: String?
+        var muxer: String?
+        var timeline: Timeline
+    }
+    private let state: NIOLockedValueBox<State>
+
     /// The status of the connection.
-    /// - Note: It can be either open, closing or closed. Once the connection is created it is in an open status. When a conn.close() happens, the status will change to closing and finally, after all the connection streams are properly closed, the status will be closed
-    /// - TODO: Should be a state machine that enforces one way state transistions and updates the timeline on didSet...
+    /// - Note: Setting the status also stamps the corresponding `timeline` timestamp (opened /
+    ///   upgraded / closing / closed).
     public var status: Status {
-        didSet {
-            switch status {
-            case .open:
-                self.timeline.opened = Time()
-            case .upgraded:
-                self.timeline.upgraded = Time()
-            case .closing:
-                self.timeline.closing = Time()
-            case .closed:
-                self.timeline.closed = Time()
-            default:
-                return
+        get { self.state.withLockedValue { $0.status } }
+        set {
+            self.state.withLockedValue {
+                $0.status = newValue
+                switch newValue {
+                case .open: $0.timeline.opened = Date()
+                case .upgraded: $0.timeline.upgraded = Date()
+                case .closing: $0.timeline.closing = Date()
+                case .closed: $0.timeline.closed = Date()
+                case .opening: break
+                }
             }
         }
     }
@@ -230,38 +250,42 @@ public class ConnectionStats: CustomStringConvertible {
     /// The UUID of the Connection
     public let uuid: UUID
 
-    /// The open, upgraded and close timestamps of the connection.
-    /// - Note: that, the close timestamp is undefined until the connection is closed
-    /// - TODO: Should be a get only variable (updated internally via status's didSet KVO method)
-    public let timeline: Timeline
+    /// A snapshot of the connection's open / upgraded / close timestamps.
+    public var timeline: Timeline {
+        self.state.withLockedValue { $0.timeline }
+    }
 
     /// The direction of the peer in the connection. It can be inbound or outbound
     public let direction: Direction
 
     /// The encryption method being used in the connection. It is undefined if the connection is not encrypted.
-    public var encryption: String?
+    public var encryption: String? {
+        get { self.state.withLockedValue { $0.encryption } }
+        set { self.state.withLockedValue { $0.encryption = newValue } }
+    }
 
     /// The multiplexing codec being used in the connection (optional)
-    public var muxer: String?
+    public var muxer: String? {
+        get { self.state.withLockedValue { $0.muxer } }
+        set { self.state.withLockedValue { $0.muxer = newValue } }
+    }
 
     public init(uuid: UUID, direction: Direction, muxer: String? = nil, encryption: String? = nil) {
         self.uuid = uuid
         self.direction = direction
-        self.muxer = muxer
-        self.encryption = encryption
-        self.status = .opening
-        self.timeline = Timeline()
+        self.state = .init(State(status: .opening, encryption: encryption, muxer: muxer, timeline: Timeline()))
     }
 
     public var description: String {
-        """
-        \n\tConnection ID: \(uuid)
-        \tDirection: \(direction)
-        \tSecurity: \(encryption?.description ?? "No Security")
-        \tMuxed: \(muxer?.description ?? "Not Muxed")
-        \tStatus: \(status)
-        \t\(timeline.description)
-        """
+        let snapshot = self.state.withLockedValue { $0 }
+        return """
+            \n\tConnection ID: \(uuid)
+            \tDirection: \(direction)
+            \tSecurity: \(snapshot.encryption?.description ?? "No Security")
+            \tMuxed: \(snapshot.muxer?.description ?? "Not Muxed")
+            \tStatus: \(snapshot.status)
+            \t\(snapshot.timeline.description)
+            """
     }
 }
 
