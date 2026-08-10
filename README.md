@@ -32,7 +32,7 @@ let package = Package(
     ...
     dependencies: [
         ...
-        .package(name: "LibP2PCore", url: "https://github.com/swift-libp2p/swift-libp2p-core.git", .upToNextMinor(from: "0.4.0"))
+        .package(name: "LibP2PCore", url: "https://github.com/swift-libp2p/swift-libp2p-core.git", .upToNextMinor(from: "0.5.0"))
     ],
         ...
         .target(
@@ -77,5 +77,5 @@ Let's make this code better together! 🤝
 
 ## License
 
-[MIT](LICENSE) © 2022 Breth Inc.
+[MIT](LICENSE) © 2026 Breth Inc.
 
