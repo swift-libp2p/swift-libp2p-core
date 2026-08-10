@@ -32,7 +32,7 @@ public protocol Record: Equatable, Sendable {
     /// Verifies if the other Record is identical to this one
     func equals<R: Record>(_ r: R) -> Bool
 
-    func unsignedPayload() -> [UInt8]
+    func unsignedPayload() throws -> [UInt8]
 
     /// Signs / Seals this `Record` in an `Envelope` using the private key provided
     ///

@@ -105,11 +105,11 @@ public final class PeerRecord: Record, Hashable, Sendable {
     /// When the Multicodec value for libp2p-peer-record is actually 0x0301 which when placed in a uVarInt buffer results in a multicodec prefix of [0x81, 0x06]
     /// This also results in the Multicodec resolving to cidv3 instead of libp2p-peer-record during decoding.
     /// I guess for now we just use the hardcoded values...
-    public func unsignedPayload() -> [UInt8] {
+    public func unsignedPayload() throws -> [UInt8] {
         uVarIntLengthPrefixed(domain.data(using: .utf8)!.byteArray)
             + uVarIntLengthPrefixed([0x03, 0x01])
             //+ uVarIntLengthPrefixed( Multicodec.getPrefix(multiCodec: PeerRecord.codec) )
-            + uVarIntLengthPrefixed(try! self.marshal())
+            + uVarIntLengthPrefixed(try self.marshal())
     }
 
     private func uVarIntLengthPrefixed(_ bytes: [UInt8]) -> [UInt8] {
