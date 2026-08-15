@@ -209,3 +209,18 @@ public struct SemVerProtocol: Equatable, Hashable, Sendable {
         }
     }
 }
+
+extension SemVerProtocol: LosslessStringConvertible {
+    public var description: String {
+        self.stringValue
+    }
+
+    public static func == (lhs: SemVerProtocol, rhs: String) -> Bool {
+        if rhs.hasPrefix("/") { return lhs.stringValue == rhs }
+        return lhs.stringValue == "/\(rhs)"
+    }
+
+    public static func == (lhs: String, rhs: SemVerProtocol) -> Bool {
+        rhs == lhs
+    }
+}
