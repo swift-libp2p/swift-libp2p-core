@@ -122,7 +122,6 @@ public struct SemVerProtocol: Equatable, Hashable, Sendable {
                 return v.major == pv.major && v.minor == pv.minor
             }
         }
-
     }
 
     public struct ProtocolVersion: Equatable, Hashable, Sendable {
@@ -142,17 +141,17 @@ public struct SemVerProtocol: Equatable, Hashable, Sendable {
 
     /// Instantiates a SemVerProtocol matching the exact version specified
     public init(proto: String, version: ProtocolVersion?) {
-        self.proto = proto.hasPrefix("/") ? proto : "/\(proto)"
+        self.proto = proto.hasPrefix("/") ? String(proto.dropFirst()) : proto
         if let v = version {
             self.version = .exact(v)
         } else {
             self.version = nil
         }
-
     }
 
+    /// Instantiates a SemVerProtocol with the version specified
     public init(proto: String, version: SemVersion?) {
-        self.proto = proto.hasPrefix("/") ? proto : "/\(proto)"
+        self.proto = proto.hasPrefix("/") ? String(proto.dropFirst()) : proto
         self.version = version
     }
 
@@ -176,13 +175,12 @@ public struct SemVerProtocol: Equatable, Hashable, Sendable {
             parts.removeLast()
         }
 
-        self.proto = "/\(parts.joined(separator: "/"))"
+        self.proto = "\(parts.joined(separator: "/"))"
         if let v = semVer {
             self.version = .exact(v)
         } else {
             self.version = nil
         }
-
     }
 
     public func matches(_ svp: SemVerProtocol) -> Bool {
@@ -205,9 +203,9 @@ public struct SemVerProtocol: Equatable, Hashable, Sendable {
 
     public var stringValue: String {
         if let version = version {
-            return "\(proto)/\(version.stringValue)"
+            return "/\(proto)/\(version.stringValue)"
         } else {
-            return "\(proto)"
+            return "/\(proto)"
         }
     }
 }
