@@ -73,3 +73,19 @@ protocol Host {
     /// EventBus returns the hosts eventbus
     var eventBus: EventBus { get }
 }
+
+// MARK: - Async
+
+extension Host {
+    func connect(peer: PeerInfo) async throws {
+        try await self.connect(peer: peer).get()
+    }
+
+    func newStream(_ peer: PeerID) async throws -> Stream {
+        try await self.newStream(peer).get()
+    }
+
+    func close() async throws {
+        try await self.close().get()
+    }
+}

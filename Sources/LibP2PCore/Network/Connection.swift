@@ -283,3 +283,57 @@ public enum ConnectionEvent: Sendable {
     case reset
     case error(Error)
 }
+
+// MARK: - Async
+
+extension Connection {
+    public func inboundMuxedChildChannelInitializer(_ childChannel: Channel) async throws {
+        try await self.inboundMuxedChildChannelInitializer(childChannel).get()
+    }
+
+    public func outboundMuxedChildChannelInitializer(_ childChannel: Channel, protocol proto: String) async throws {
+        try await self.outboundMuxedChildChannelInitializer(childChannel, protocol: proto).get()
+    }
+
+    public func newStream(_ protos: [String]) async throws -> Stream {
+        try await self.newStream(protos).get()
+    }
+
+    public func removeStream(id: UInt64) async throws {
+        try await self.removeStream(id: id).get()
+    }
+
+    public func acceptStream(_ stream: Stream, protocol proto: String, metadata: [String]) async throws -> Bool {
+        try await self.acceptStream(stream, protocol: proto, metadata: metadata).get()
+    }
+
+    public func close() async throws {
+        try await self.close().get()
+    }
+}
+
+extension ConnectionLifecycleDelegate {
+    public func onOpened() async throws {
+        try await self.onOpened().get()
+    }
+
+    public func onSecured(sec: SecurityProtocolInstaller, remotePeerID: PeerID?) async throws {
+        try await self.onSecured(sec: sec, remotePeerID: remotePeerID).get()
+    }
+
+    public func onMuxed(muxer: MuxerProtocolInstaller) async throws {
+        try await self.onMuxed(muxer: muxer).get()
+    }
+
+    public func onUpgraded() async throws {
+        try await self.onUpgraded().get()
+    }
+
+    public func onClosing() async throws {
+        try await self.onClosing().get()
+    }
+
+    public func onClosed() async throws {
+        try await self.onClosed().get()
+    }
+}

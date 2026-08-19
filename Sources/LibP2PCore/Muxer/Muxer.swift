@@ -100,3 +100,46 @@ extension MuxerProtocolInstaller {
         return "/\(protocolName)/\(protocolVersion)"
     }
 }
+
+// MARK: - Async
+
+extension Muxer {
+    public func newStream(channel: Channel, proto: String) async throws -> _Stream {
+        try await self.newStream(channel: channel, proto: proto).get()
+    }
+
+    public func newStream(channel: Channel, proto: ProtocolRegistration) async throws -> _Stream {
+        try await self.newStream(channel: channel, proto: proto).get()
+    }
+
+    public func getStream(id: UInt64, mode: Mode) async throws -> Stream? {
+        try await self.getStream(id: id, mode: mode).get()
+    }
+
+    public func updateStream(channel: Channel, state: StreamState, proto: String) async throws {
+        try await self.updateStream(channel: channel, state: state, proto: proto).get()
+    }
+}
+
+extension MuxerProtocolInstaller {
+    /// Installs the muxer handlers and awaits the upgraded `Muxer`.
+    public func installHandlers(
+        on ctx: ChannelHandlerContext,
+        at position: ChannelPipeline.Position,
+        localPeer: PeerID,
+        mode: Mode,
+        supportedProtocols: [ProtocolRegistration]
+    ) async throws -> Muxer {
+        let promise = ctx.eventLoop.makePromise(of: Muxer.self)
+        let upgraded = promise.futureResult
+        try await self.installHandlers(
+            on: ctx,
+            at: position,
+            localPeer: localPeer,
+            mode: mode,
+            supportedProtocols: supportedProtocols,
+            upgraded: promise
+        ).get()
+        return try await upgraded.get()
+    }
+}

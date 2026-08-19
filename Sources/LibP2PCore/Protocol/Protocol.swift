@@ -224,3 +224,11 @@ extension SemVerProtocol: LosslessStringConvertible {
         rhs == lhs
     }
 }
+
+// MARK: - Async
+
+extension ProtocolHandler {
+    public func handleData(_ data: [UInt8]) async throws {
+        try await self.handleData(data).get()
+    }
+}

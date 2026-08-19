@@ -111,3 +111,47 @@ func getPublicKey(_ store: ValueStore, peer: PeerID, on: EventLoop) -> EventLoop
     //    try PublicKey(fromMarshaledValue: pkval)
     //}
 }
+
+// MARK: - Async
+
+extension ContentRouting {
+    public func provide(cid: [UInt8], announce: Bool) async throws {
+        try await self.provide(cid: cid, announce: announce).get()
+    }
+
+    public func findProviders(cid: [UInt8], count: Int) async throws -> [Multiaddr] {
+        try await self.findProviders(cid: cid, count: count).get()
+    }
+}
+
+extension PeerRouting {
+    public func findPeer(peer: PeerID) async throws -> PeerInfo {
+        try await self.findPeer(peer: peer).get()
+    }
+}
+
+extension ValueStore {
+    /// - Note: The variadic `options` supported by the `EventLoopFuture` variant are omitted here;
+    ///   structured routing options are a planned follow-up.
+    public func putValue(key: String, value: [UInt8]) async throws {
+        try await self.putValue(key: key, value: value).get()
+    }
+
+    /// - Note: The variadic `options` supported by the `EventLoopFuture` variant are omitted here;
+    ///   structured routing options are a planned follow-up.
+    public func getValue(key: String) async throws -> [UInt8] {
+        try await self.getValue(key: key).get()
+    }
+}
+
+extension Routing {
+    public func bootstrap() async throws {
+        try await self.bootstrap().get()
+    }
+}
+
+extension PublicKeyFetcher {
+    public func getPublicKey(peerID: String) async throws -> PeerID {
+        try await self.getPublicKey(peerID: peerID).get()
+    }
+}

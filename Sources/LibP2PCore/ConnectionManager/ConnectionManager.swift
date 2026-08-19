@@ -52,3 +52,39 @@ public enum Connectedness: Sendable {
     /// We have attempted to connect to this peer and we unable to establish a capcable connection
     case CanNotConnect
 }
+
+// MARK: - Async
+
+extension ConnectionManager {
+    public func getConnections() async throws -> [Connection] {
+        try await self.getConnections(on: nil).get()
+    }
+
+    public func getConnectionsToPeer(peer: PeerID) async throws -> [Connection] {
+        try await self.getConnectionsToPeer(peer: peer, on: nil).get()
+    }
+
+    public func getBestConnectionForPeer(peer: PeerID) async throws -> Connection? {
+        try await self.getBestConnectionForPeer(peer: peer, on: nil).get()
+    }
+
+    public func connectedness(peer: PeerID) async throws -> Connectedness {
+        try await self.connectedness(peer: peer, on: nil).get()
+    }
+
+    public func addConnection(_ connection: Connection) async throws {
+        try await self.addConnection(connection, on: nil).get()
+    }
+
+    public func closeConnectionsToPeer(peer: PeerID) async throws -> Bool {
+        try await self.closeConnectionsToPeer(peer: peer, on: nil).get()
+    }
+
+    public func getConnectionsTo(_ addr: Multiaddr, onlyMuxed: Bool) async throws -> [Connection] {
+        try await self.getConnectionsTo(addr, onlyMuxed: onlyMuxed, on: nil).get()
+    }
+
+    public func closeAllConnections() async throws {
+        try await self.closeAllConnections().get()
+    }
+}

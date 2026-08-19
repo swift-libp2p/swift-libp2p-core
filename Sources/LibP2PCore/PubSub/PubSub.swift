@@ -380,3 +380,153 @@ public protocol MessageStateProtocol: EventLoopService {
         on loop: EventLoop?
     ) -> EventLoopFuture<[Data]>
 }
+
+// MARK: - Async
+
+extension PubSubCore {
+    public func subscribe(_ config: PubSub.SubscriptionConfig) async throws {
+        try await self.subscribe(config, on: nil).get()
+    }
+
+    public func unsubscribe(topic: String) async throws {
+        try await self.unsubscribe(topic: topic, on: nil).get()
+    }
+
+    public func getTopics() async throws -> [String] {
+        try await self.getTopics(on: nil).get()
+    }
+
+    public func getPeersSubscribed(to topic: String) async throws -> [PeerID] {
+        try await self.getPeersSubscribed(to: topic, on: nil).get()
+    }
+
+    public func publish(topic: String, data: Data) async throws {
+        try await self.publish(topic: topic, data: data, on: nil).get()
+    }
+
+    public func publish(topic: String, bytes: [UInt8]) async throws {
+        try await self.publish(topic: topic, bytes: bytes, on: nil).get()
+    }
+
+    public func publish(topic: String, buffer: ByteBuffer) async throws {
+        try await self.publish(topic: topic, buffer: buffer, on: nil).get()
+    }
+}
+
+extension PubSub.SubscriptionHandler {
+    public func publish(_ data: Data) async throws {
+        guard let ps = pubsub else { throw Errors.subscriptionNotAvailable }
+        try await ps.publish(topic: self.topic, data: data, on: nil).get()
+    }
+
+    public func publish(_ bytes: [UInt8]) async throws {
+        guard let ps = pubsub else { throw Errors.subscriptionNotAvailable }
+        try await ps.publish(topic: self.topic, bytes: bytes, on: nil).get()
+    }
+
+    public func publish(_ buffer: ByteBuffer) async throws {
+        guard let ps = pubsub else { throw Errors.subscriptionNotAvailable }
+        try await ps.publish(topic: self.topic, buffer: buffer, on: nil).get()
+    }
+
+    public func unsubscribe() async throws {
+        guard let ps = pubsub else { throw Errors.subscriptionNotAvailable }
+        try await ps.unsubscribe(topic: self.topic, on: nil).get()
+    }
+}
+
+extension PubSub.Subscriber {
+    public func close(on: EventLoop) async throws {
+        try await self.close(on: on).get()
+    }
+}
+
+extension PeerConnectionDelegate {
+    public func onPeerConnected(peerID: PeerID, stream: Stream) async throws {
+        try await self.onPeerConnected(peerID: peerID, stream: stream).get()
+    }
+
+    public func onPeerDisconnected(_ peer: PeerID) async throws {
+        try await self.onPeerDisconnected(peer).get()
+    }
+}
+
+extension PeerStateProtocol {
+    public func addNewPeer(_ peer: PeerID) async throws -> Bool {
+        try await self.addNewPeer(peer, on: nil).get()
+    }
+
+    public func removePeer(_ peer: PeerID) async throws {
+        try await self.removePeer(peer, on: nil).get()
+    }
+
+    public func getAllPeers() async throws -> [PubSub.Subscriber] {
+        try await self.getAllPeers(on: nil).get()
+    }
+
+    public func attachInboundStream(_ peer: PeerID, inboundStream: Stream) async throws {
+        try await self.attachInboundStream(peer, inboundStream: inboundStream, on: nil).get()
+    }
+
+    public func attachOutboundStream(_ peer: PeerID, outboundStream: Stream) async throws {
+        try await self.attachOutboundStream(peer, outboundStream: outboundStream, on: nil).get()
+    }
+
+    public func detachInboundStream(_ peer: PeerID) async throws {
+        try await self.detachInboundStream(peer, on: nil).get()
+    }
+
+    public func detachOutboundStream(_ peer: PeerID) async throws {
+        try await self.detachOutboundStream(peer, on: nil).get()
+    }
+
+    public func update(topics: [String], for peer: PeerID) async throws {
+        try await self.update(topics: topics, for: peer, on: nil).get()
+    }
+
+    public func update(subscriptions: [String: Bool], for peer: PeerID) async throws {
+        try await self.update(subscriptions: subscriptions, for: peer, on: nil).get()
+    }
+
+    public func peersSubscribedTo(topic: String) async throws -> [PubSub.Subscriber] {
+        try await self.peersSubscribedTo(topic: topic, on: nil).get()
+    }
+
+    public func topicSubscriptions() async throws -> [String] {
+        try await self.topicSubscriptions(on: nil).get()
+    }
+
+    public func subscribeSelf(to topic: String) async throws -> [String] {
+        try await self.subscribeSelf(to: topic, on: nil).get()
+    }
+
+    public func unsubscribeSelf(from topic: String) async throws -> [String] {
+        try await self.unsubscribeSelf(from: topic, on: nil).get()
+    }
+
+    public func streamsFor(_ peer: PeerID) async throws -> PubSub.Subscriber {
+        try await self.streamsFor(peer, on: nil).get()
+    }
+}
+
+extension MessageStateProtocol {
+    public func put(messageID: Data, message: (topic: String, data: PubSubMessage)) async throws -> Bool {
+        try await self.put(messageID: messageID, message: message, on: nil).get()
+    }
+
+    public func put(messages: [Data: PubSubMessage]) async throws -> [Data: PubSubMessage] {
+        try await self.put(messages: messages, on: nil).get()
+    }
+
+    public func get(messageID: Data) async throws -> (topic: String, data: PubSubMessage)? {
+        try await self.get(messageID: messageID, on: nil).get()
+    }
+
+    public func exists(messageID: Data) async throws -> Bool {
+        try await self.exists(messageID: messageID, on: nil).get()
+    }
+
+    public func filter(ids: Set<Data>, returningOnly: PubSub.MessageState.FilterType) async throws -> [Data] {
+        try await self.filter(ids: ids, returningOnly: returningOnly, on: nil).get()
+    }
+}
