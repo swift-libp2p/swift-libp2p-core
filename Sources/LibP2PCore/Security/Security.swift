@@ -87,5 +87,39 @@ extension SecurityProtocolInstaller {
             expectedRemotePeerID: expectedRemotePeerID
         )
     }
+}
 
+// MARK: - Async
+
+extension SecureTransport {
+    public func secureInbound(insecure: Connection, peer: PeerID?) async throws -> Connection {
+        try await self.secureInbound(insecure: insecure, peer: peer).get()
+    }
+
+    public func secureOutbound(insecure: Connection, peer: PeerID) async throws -> Connection {
+        try await self.secureOutbound(insecure: insecure, peer: peer).get()
+    }
+}
+
+extension SecurityProtocolInstaller {
+    /// Installs the security handlers and awaits the negotiated `(authenticated, remotePeer)` result.
+    public func installHandlers(
+        on ctx: ChannelHandlerContext,
+        at position: ChannelPipeline.Position,
+        peerID: PeerID,
+        mode: LibP2PCore.Mode,
+        expectedRemotePeerID: String? = nil
+    ) async throws -> (Bool, PeerID?) {
+        let promise = ctx.eventLoop.makePromise(of: (Bool, PeerID?).self)
+        let secured = promise.futureResult
+        try await self.installHandlers(
+            on: ctx,
+            at: position,
+            peerID: peerID,
+            mode: mode,
+            secured: promise,
+            expectedRemotePeerID: expectedRemotePeerID
+        ).get()
+        return try await secured.get()
+    }
 }

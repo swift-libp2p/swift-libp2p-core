@@ -66,3 +66,21 @@ public protocol MulticodecTopology: Topology {
     /// The multicodecs (aka protocols) this topology is interested in
     var protocols: [SemVerProtocol] { get }
 }
+
+// MARK: - Async
+
+extension Topology {
+    /// Add a peer to the topology. Returns `nil` if the topology does not perform the operation.
+    public func set(id: String, peer: PeerID) async throws -> Bool? {
+        let future: EventLoopFuture<Bool>? = self.set(id: id, peer: peer)
+        guard let future else { return nil }
+        return try await future.get()
+    }
+
+    /// Disconnects a peer from the topology. No-op if the topology does not perform the operation.
+    public func disconnect(peer: PeerID) async throws {
+        let future: EventLoopFuture<Void>? = self.disconnect(peer: peer)
+        guard let future else { return }
+        try await future.get()
+    }
+}

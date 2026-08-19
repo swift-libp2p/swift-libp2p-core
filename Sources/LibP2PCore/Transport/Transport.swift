@@ -130,3 +130,31 @@ extension Transport {
         "\(Self.key)"
     }
 }
+
+// MARK: - Async
+
+extension Transport {
+    public func dial(address: Multiaddr) async throws -> Connection {
+        try await self.dial(address: address).get()
+    }
+
+    public func listen(address: Multiaddr) async throws -> Listener {
+        try await self.listen(address: address).get()
+    }
+}
+
+extension Listener {
+    public func accept() async throws -> Connection {
+        try await self.accept().get()
+    }
+
+    public func close() async throws {
+        try await self.close().get()
+    }
+}
+
+extension TransportNetwork {
+    public func addTransport(_ t: Transport) async throws {
+        try await self.addTransport(t).get()
+    }
+}

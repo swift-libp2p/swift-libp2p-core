@@ -374,3 +374,141 @@ extension MetadataRepository {
     //    getMetadata(metaKey: metaKey, forPeer: forPeer, on: on)
     //}
 }
+
+// MARK: - Async
+
+extension PeerStore {
+    public func all() async throws -> [ComprehensivePeer] {
+        try await self.all().get()
+    }
+
+    public func count() async throws -> Int {
+        try await self.count().get()
+    }
+}
+
+extension KeyRepository {
+    public func removeAllKeys() async throws {
+        try await self.removeAllKeys(on: nil).get()
+    }
+
+    public func add(key: PeerID) async throws {
+        try await self.add(key: key, on: nil).get()
+    }
+
+    public func remove(key: PeerID) async throws {
+        try await self.remove(key: key, on: nil).get()
+    }
+
+    public func getKey(forPeer: String) async throws -> PeerID {
+        try await self.getKey(forPeer: forPeer, on: nil).get()
+    }
+}
+
+extension AddressRepository {
+    public func add(address: Multiaddr, toPeer: PeerID) async throws {
+        try await self.add(address: address, toPeer: toPeer, on: nil).get()
+    }
+
+    public func add(addresses: [Multiaddr], toPeer: PeerID) async throws {
+        try await self.add(addresses: addresses, toPeer: toPeer, on: nil).get()
+    }
+
+    public func remove(address: Multiaddr, fromPeer: PeerID) async throws {
+        try await self.remove(address: address, fromPeer: fromPeer, on: nil).get()
+    }
+
+    public func removeAllAddresses(forPeer: PeerID) async throws {
+        try await self.removeAllAddresses(forPeer: forPeer, on: nil).get()
+    }
+
+    public func getAddresses(forPeer: PeerID) async throws -> [Multiaddr] {
+        try await self.getAddresses(forPeer: forPeer, on: nil).get()
+    }
+
+    public func getPeer(byAddress: Multiaddr) async throws -> String {
+        try await self.getPeer(byAddress: byAddress, on: nil).get()
+    }
+
+    public func getPeerID(byAddress address: Multiaddr) async throws -> PeerID {
+        try await self.getPeerID(byAddress: address, on: nil).get()
+    }
+
+    public func getPeerInfo(byAddress address: Multiaddr) async throws -> PeerInfo {
+        try await self.getPeerInfo(byAddress: address, on: nil).get()
+    }
+}
+
+extension ProtocolRepository {
+    public func removeAllProtocols(forPeer: PeerID) async throws {
+        try await self.removeAllProtocols(forPeer: forPeer, on: nil).get()
+    }
+
+    public func add(protocol proto: SemVerProtocol, toPeer: PeerID) async throws {
+        try await self.add(protocol: proto, toPeer: toPeer, on: nil).get()
+    }
+
+    public func add(protocols: [SemVerProtocol], toPeer: PeerID) async throws {
+        try await self.add(protocols: protocols, toPeer: toPeer, on: nil).get()
+    }
+
+    public func remove(protocol proto: SemVerProtocol, fromPeer: PeerID) async throws {
+        try await self.remove(protocol: proto, fromPeer: fromPeer, on: nil).get()
+    }
+
+    public func remove(protocols: [SemVerProtocol], fromPeer: PeerID) async throws {
+        try await self.remove(protocols: protocols, fromPeer: fromPeer, on: nil).get()
+    }
+
+    public func getProtocols(forPeer: PeerID) async throws -> [SemVerProtocol] {
+        try await self.getProtocols(forPeer: forPeer, on: nil).get()
+    }
+
+    public func getPeers(supportingProtocol: SemVerProtocol) async throws -> [String] {
+        try await self.getPeers(supportingProtocol: supportingProtocol, on: nil).get()
+    }
+}
+
+extension MetadataRepository {
+    public func removeAllMetadata(forPeer: PeerID) async throws {
+        try await self.removeAllMetadata(forPeer: forPeer, on: nil).get()
+    }
+
+    public func add(metaKey: String, data: [UInt8], toPeer: PeerID) async throws {
+        try await self.add(metaKey: metaKey, data: data, toPeer: toPeer, on: nil).get()
+    }
+
+    public func add(metaKey: MetadataBook.Keys, data: [UInt8], toPeer: PeerID) async throws {
+        try await self.add(metaKey: metaKey, data: data, toPeer: toPeer, on: nil).get()
+    }
+
+    public func remove(metaKey: String, fromPeer: PeerID) async throws {
+        try await self.remove(metaKey: metaKey, fromPeer: fromPeer, on: nil).get()
+    }
+
+    public func getMetadata(forPeer: PeerID) async throws -> Metadata {
+        try await self.getMetadata(forPeer: forPeer, on: nil).get()
+    }
+}
+
+extension RecordRepository {
+    public func add(record: PeerRecord) async throws {
+        try await self.add(record: record, on: nil).get()
+    }
+
+    public func getRecords(forPeer peer: PeerID) async throws -> [PeerRecord] {
+        try await self.getRecords(forPeer: peer, on: nil).get()
+    }
+
+    public func getMostRecentRecord(forPeer peer: PeerID) async throws -> PeerRecord? {
+        try await self.getMostRecentRecord(forPeer: peer, on: nil).get()
+    }
+
+    public func trimRecords(forPeer peer: PeerID) async throws {
+        try await self.trimRecords(forPeer: peer, on: nil).get()
+    }
+
+    public func removeRecords(forPeer peer: PeerID) async throws {
+        try await self.removeRecords(forPeer: peer, on: nil).get()
+    }
+}

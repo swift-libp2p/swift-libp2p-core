@@ -70,3 +70,23 @@ public struct DiscoverdPeers: Sendable {
         self.cookie = cookie
     }
 }
+
+// MARK: - Async
+
+extension Advertiser {
+    public func advertise(service: String, options: Options? = nil) async throws -> TimeAmount {
+        try await self.advertise(service: service, options: options).get()
+    }
+}
+
+extension Discoverer {
+    public func findPeers(supportingService service: String, options: Options? = nil) async throws -> DiscoverdPeers {
+        try await self.findPeers(supportingService: service, options: options).get()
+    }
+}
+
+extension PeerDiscovery {
+    public func knownPeers() async throws -> [PeerInfo] {
+        try await self.knownPeers().get()
+    }
+}

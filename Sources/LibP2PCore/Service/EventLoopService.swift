@@ -35,6 +35,14 @@ extension EventLoopService {
     }
 }
 
+// MARK: - Async
+
+extension EventLoopService {
+    public func heartbeat() async throws {
+        try await self.heartbeat().get()
+    }
+}
+
 public enum ServiceLifecycleState: Sendable {
     case starting
     case started

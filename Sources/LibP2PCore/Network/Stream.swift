@@ -254,3 +254,54 @@ public enum StreamEvent {
         }
     }
 }
+
+// MARK: - Async
+
+extension Stream {
+    public func write(_ bytes: [UInt8]) async throws {
+        try await self.write(bytes).get()
+    }
+
+    public func write(_ buffer: ByteBuffer) async throws {
+        try await self.write(buffer).get()
+    }
+
+    public func close(gracefully: Bool = true) async throws {
+        try await self.close(gracefully: gracefully).get()
+    }
+
+    public func reset() async throws {
+        try await self.reset().get()
+    }
+
+    public func resume() async throws {
+        try await self.resume().get()
+    }
+}
+
+extension StreamHandler {
+    public func write(_ bytes: [UInt8]) async throws {
+        guard let s = _stream else { throw Errors.streamNotAvailable }
+        try await s.write(bytes).get()
+    }
+
+    public func write(_ buffer: ByteBuffer) async throws {
+        guard let s = _stream else { throw Errors.streamNotAvailable }
+        try await s.write(buffer).get()
+    }
+
+    public func close(gracefully: Bool = true) async throws {
+        guard let s = _stream else { throw Errors.streamNotAvailable }
+        try await s.close(gracefully: gracefully).get()
+    }
+
+    public func reset() async throws {
+        guard let s = _stream else { throw Errors.streamNotAvailable }
+        try await s.reset().get()
+    }
+
+    public func resume() async throws {
+        guard let s = _stream else { throw Errors.streamNotAvailable }
+        try await s.resume().get()
+    }
+}
