@@ -176,6 +176,56 @@ struct ByteBufferVarintTests {
         }
     }
 
+    // MARK: - Limits expressed as byte counts
+
+    /// The `ByteCount` overloads of the `UInt64` ones, so the same ceiling has to
+    /// behave identically between them.
+    @Test func aByteCountLimitMatchesTheEquivalentUInt64Limit() throws {
+        let ceiling: ByteCount = .mebibytes(1)
+        #expect(ceiling.value == 1 << 20)
+
+        // At the ceiling, accepted.
+        var atLimit = ByteBufferAllocator().buffer(capacity: 16)
+        atLimit.writeVarInt(UInt64(ceiling.value))
+        #expect(try atLimit.readVarInt(limit: ceiling) == UInt64(ceiling.value))
+
+        // One over, rejected with nothing consumed, and reporting the same limit the
+        // `UInt64` spelling would.
+        var overLimit = ByteBufferAllocator().buffer(capacity: 16)
+        overLimit.writeVarInt(UInt64(ceiling.value) + 1)
+        let announcedBytes = overLimit.readableBytes
+        #expect(throws: VarIntError.exceedsLimit(limit: 1 << 20)) { try overLimit.readVarInt(limit: ceiling) }
+        #expect(overLimit.readableBytes == announcedBytes)
+
+        // The whole-frame and peeking entry points take the same ceiling.
+        var frame = ByteBufferAllocator().buffer(capacity: 32)
+        frame.writeVarIntLengthPrefixed(Array(repeating: UInt8(0xAB), count: 300))
+        var oversized = frame
+        #expect(throws: VarIntError.exceedsLimit(limit: 299)) {
+            try oversized.readVarIntLengthPrefixedSlice(limit: .bytes(299))
+        }
+        #expect(try frame.readVarIntLengthPrefixedSlice(limit: .kibibytes(1))?.readableBytes == 300)
+        #expect(try frame.getVarInt(at: frame.readerIndex, limit: .kibibytes(1)) == nil)
+    }
+
+    /// `ByteCount` is signed, the wire limit is not. A negative ceiling has to clamp.
+    @Test func aNegativeByteCountLimitClampsToZero() throws {
+        var buf = ByteBufferAllocator().buffer(capacity: 16)
+        buf.writeVarInt(1)
+        #expect(throws: VarIntError.exceedsLimit(limit: 0)) { try buf.readVarInt(limit: ByteCount(value: -5)) }
+        #expect(buf.readableBytes == 1, "a throwing read consumed bytes")
+    }
+
+    @Test func aLiteralLimitIsStillUnambiguous() throws {
+        var buf = ByteBufferAllocator().buffer(capacity: 16)
+        buf.writeVarInt(4096)
+        #expect(try buf.readVarInt(limit: 4096) == 4096)
+
+        var frame = ByteBufferAllocator().buffer(capacity: 32)
+        frame.writeVarIntLengthPrefixed(Array(repeating: UInt8(0x01), count: 8))
+        #expect(try frame.readVarIntLengthPrefixedSlice(limit: 4096)?.readableBytes == 8)
+    }
+
     // MARK: - Peeking
 
     @Test func getVarIntDoesNotMoveTheReaderIndex() throws {
