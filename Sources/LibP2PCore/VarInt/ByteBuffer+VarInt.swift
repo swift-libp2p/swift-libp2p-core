@@ -179,3 +179,70 @@ extension ByteBuffer {
         self.writeVarInt(UInt64(buffer.readableBytes)) + self.writeBytes(buffer.readableBytesView)
     }
 }
+
+// MARK: - ByteCount Overloads
+
+extension ByteBuffer {
+
+    /// Reads an unsigned VarInt from the reader index, rejecting values over `limit`.
+    ///
+    /// See `readVarInt(limit:requireMinimal:)`.
+    ///
+    /// - Parameters:
+    ///   - limit: The largest value to accept as a ByteCount.
+    ///     `VarIntError.exceedsLimit` is thrown as soon as the accumulated bits
+    ///     provably exceed it.
+    ///   - requireMinimal: Whether to reject non-minimal encodings. Defaults to
+    ///     `true`, matching the multiformats VarInt spec.
+    /// - Returns: The decoded value, or `nil` if the buffer does not yet hold a
+    ///   complete VarInt.
+    /// - Throws: A `VarIntError` if the bytes cannot form a valid VarInt no
+    ///   matter how many more arrive. The reader index is restored on a throw.
+    public mutating func readVarInt(
+        limit: ByteCount,
+        requireMinimal: Bool = true
+    ) throws(VarIntError) -> UInt64? {
+        try self.readVarInt(limit: UInt64(clamping: limit.value), requireMinimal: requireMinimal)
+    }
+
+    /// Reads a VarInt length prefix followed by that many bytes, rejecting bodies over `limit`.
+    ///
+    /// See `readVarIntLengthPrefixedSlice(limit:requireMinimal:)`.
+    ///
+    /// - Parameters:
+    ///   - limit: The largest body length to accept as a ByteCount. An oversized
+    ///     announcement is rejected while the prefix is being decoded.
+    ///   - requireMinimal: Whether to reject a non-minimally encoded prefix or not.
+    /// - Returns: The body as a slice, or `nil` if the complete frame isn't
+    ///   available yet.
+    /// - Throws: A `VarIntError` if the prefix is malformed or over `limit`, or
+    ///   `.overflow` if the announced length can't be represented as an `Int`.
+    public mutating func readVarIntLengthPrefixedSlice(
+        limit: ByteCount,
+        requireMinimal: Bool = true
+    ) throws(VarIntError) -> ByteBuffer? {
+        try self.readVarIntLengthPrefixedSlice(
+            limit: UInt64(clamping: limit.value),
+            requireMinimal: requireMinimal
+        )
+    }
+
+    /// Decodes the unsigned VarInt at an absolute index without moving the reader, rejecting values
+    /// over `limit`.
+    ///
+    /// See `getVarInt(at:limit:requireMinimal:)`.
+    ///
+    /// - Parameters:
+    ///   - index: The absolute index to decode from.
+    ///   - limit: The largest value to accept as a ByteCount.
+    ///   - requireMinimal: Whether to reject non-minimal encodings or not.
+    /// - Returns: The decoded value and how many bytes it occupies, or `nil` if
+    ///   the buffer does not hold a complete VarInt at `index`.
+    public func getVarInt(
+        at index: Int,
+        limit: ByteCount,
+        requireMinimal: Bool = true
+    ) throws(VarIntError) -> (value: UInt64, byteCount: Int)? {
+        try self.getVarInt(at: index, limit: UInt64(clamping: limit.value), requireMinimal: requireMinimal)
+    }
+}
