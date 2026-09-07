@@ -113,7 +113,7 @@ public final class PeerRecord: Record, Hashable, Sendable {
     }
 
     private func uVarIntLengthPrefixed(_ bytes: [UInt8]) -> [UInt8] {
-        putUVarInt(UInt64(bytes.count)) + bytes
+        bytes.uVarIntLengthPrefixed
     }
 
 }
