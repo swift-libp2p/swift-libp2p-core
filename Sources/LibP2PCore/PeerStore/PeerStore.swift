@@ -591,9 +591,9 @@ extension MetadataRepository {
     public func remove(metaKey: String, fromPeer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
         remove(metaKey: metaKey, fromPeer: fromPeer, on: on)
     }
-    //func remove(metaKey:MetadataBook.Keys, fromPeer:PeerID, on:EventLoop? = nil) -> EventLoopFuture<Void> {
-    //    remove(metaKey: metaKey.rawValue, fromPeer: fromPeer, on: on)
-    //}
+    public func remove(metaKey: MetadataBook.Keys, fromPeer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
+        remove(metaKey: metaKey.rawValue, fromPeer: fromPeer, on: on)
+    }
     public func getMetadata(forPeer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Metadata> {
         getMetadata(forPeer: forPeer, on: on)
     }
