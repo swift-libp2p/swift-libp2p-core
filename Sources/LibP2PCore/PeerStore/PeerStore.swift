@@ -597,9 +597,202 @@ extension MetadataRepository {
     public func getMetadata(forPeer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Metadata> {
         getMetadata(forPeer: forPeer, on: on)
     }
-    //func getMetadata(metaKey: String, forPeer:PeerID, on:EventLoop? = nil) -> EventLoopFuture<(key:String, value: [UInt8])> {
-    //    getMetadata(metaKey: metaKey, forPeer: forPeer, on: on)
-    //}
+}
+
+// MARK: - Typed Metadata
+
+/// Typed accessors layered over the raw `[String: [UInt8]]` metadata book.
+///
+/// The standard metadata types are encoded using the following rules:
+/// - `Codable` values (``MetadataBook/LatencyMetadata``, ``MetadataBook/PrunableMetadata``) are
+///   JSON.
+/// - Timestamps (`lastHandshake`, `discovered`) are the UTF-8 decimal rendering of a
+///   `timeIntervalSince1970`.
+/// - Strings (`agentVersion`, `protocolVersion`, `observedAddress`) are raw UTF-8.
+extension MetadataRepository {
+
+    // MARK: Generic Codable access
+
+    /// Stores `value` as JSON under `metaKey`.
+    ///
+    /// - Note: `on` is non-optional here because an encoding failure needs an `EventLoop` to fail
+    ///   on. Use the `async` overload when you don't have one to hand.
+    public func add(
+        metaKey: String,
+        value: some Encodable & Sendable,
+        toPeer peer: PeerID,
+        on: EventLoop
+    ) -> EventLoopFuture<Void> {
+        do {
+            let encoded = try Array(JSONEncoder().encode(value))
+            return self.add(metaKey: metaKey, data: encoded, toPeer: peer, on: on)
+        } catch {
+            return on.makeFailedFuture(error)
+        }
+    }
+
+    public func add(
+        metaKey: MetadataBook.Keys,
+        value: some Encodable & Sendable,
+        toPeer peer: PeerID,
+        on: EventLoop
+    ) -> EventLoopFuture<Void> {
+        self.add(metaKey: metaKey.rawValue, value: value, toPeer: peer, on: on)
+    }
+
+    /// Decodes the JSON value stored under `metaKey`, or `nil` when absent or undecodable.
+    public func getMetadata<T: Decodable & Sendable>(
+        _ type: T.Type,
+        forKey metaKey: String,
+        forPeer peer: PeerID,
+        on: EventLoop? = nil
+    ) -> EventLoopFuture<T?> {
+        self.getMetadata(forPeer: peer, on: on).map { metadata in
+            guard let raw = metadata[metaKey] else { return nil }
+            return try? JSONDecoder().decode(T.self, from: Data(raw))
+        }
+    }
+
+    public func getMetadata<T: Decodable & Sendable>(
+        _ type: T.Type,
+        forKey metaKey: MetadataBook.Keys,
+        forPeer peer: PeerID,
+        on: EventLoop? = nil
+    ) -> EventLoopFuture<T?> {
+        self.getMetadata(type, forKey: metaKey.rawValue, forPeer: peer, on: on)
+    }
+
+    // MARK: Timestamps
+
+    /// Encodes a `Date` the way the metadata book has always stored timestamps: the UTF-8
+    /// decimal rendering of its `timeIntervalSince1970`.
+    public static func encodeTimestamp(_ date: Date) -> [UInt8] {
+        Array("\(date.timeIntervalSince1970)".utf8)
+    }
+
+    /// The inverse of ``encodeTimestamp(_:)``.
+    public static func decodeTimestamp(_ bytes: [UInt8]) -> Date? {
+        guard let interval = Double(String(decoding: bytes, as: UTF8.self)) else { return nil }
+        return Date(timeIntervalSince1970: interval)
+    }
+
+    public func setLastHandshake(
+        _ date: Date,
+        forPeer peer: PeerID,
+        on: EventLoop? = nil
+    ) -> EventLoopFuture<Void> {
+        self.add(metaKey: .LastHandshake, data: Self.encodeTimestamp(date), toPeer: peer, on: on)
+    }
+
+    public func getLastHandshake(forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Date?> {
+        self.getMetadata(forPeer: peer, on: on).map { metadata in
+            metadata[MetadataBook.Keys.LastHandshake.rawValue].flatMap(Self.decodeTimestamp)
+        }
+    }
+
+    public func setDiscovered(
+        _ date: Date,
+        forPeer peer: PeerID,
+        on: EventLoop? = nil
+    ) -> EventLoopFuture<Void> {
+        self.add(metaKey: .Discovered, data: Self.encodeTimestamp(date), toPeer: peer, on: on)
+    }
+
+    public func getDiscovered(forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Date?> {
+        self.getMetadata(forPeer: peer, on: on).map { metadata in
+            metadata[MetadataBook.Keys.Discovered.rawValue].flatMap(Self.decodeTimestamp)
+        }
+    }
+
+    // MARK: Prunability
+
+    /// Marks how willing the peerstore should be to evict this peer under memory pressure.
+    ///
+    /// - Note: Peers with no explicit prunability are treated as ``MetadataBook/PrunableMetadata/Prunable/prunable``.
+    public func setPrunability(
+        _ prunable: MetadataBook.PrunableMetadata.Prunable,
+        forPeer peer: PeerID,
+        on: EventLoop
+    ) -> EventLoopFuture<Void> {
+        self.add(
+            metaKey: .Prunable,
+            value: MetadataBook.PrunableMetadata(prunable: prunable),
+            toPeer: peer,
+            on: on
+        )
+    }
+
+    public func getPrunability(
+        forPeer peer: PeerID,
+        on: EventLoop? = nil
+    ) -> EventLoopFuture<MetadataBook.PrunableMetadata.Prunable> {
+        self.getMetadata(MetadataBook.PrunableMetadata.self, forKey: .Prunable, forPeer: peer, on: on)
+            .map { $0?.prunable ?? .prunable }
+    }
+
+    // MARK: Latency
+
+    public func setLatency(
+        _ latency: MetadataBook.LatencyMetadata,
+        forPeer peer: PeerID,
+        on: EventLoop
+    ) -> EventLoopFuture<Void> {
+        self.add(metaKey: .Latency, value: latency, toPeer: peer, on: on)
+    }
+
+    public func getLatency(
+        forPeer peer: PeerID,
+        on: EventLoop? = nil
+    ) -> EventLoopFuture<MetadataBook.LatencyMetadata?> {
+        self.getMetadata(MetadataBook.LatencyMetadata.self, forKey: .Latency, forPeer: peer, on: on)
+    }
+
+    // MARK: Plain-string entries
+
+    public func getStringMetadata(
+        forKey metaKey: MetadataBook.Keys,
+        forPeer peer: PeerID,
+        on: EventLoop? = nil
+    ) -> EventLoopFuture<String?> {
+        self.getMetadata(forPeer: peer, on: on).map { metadata in
+            metadata[metaKey.rawValue].map { String(decoding: $0, as: UTF8.self) }
+        }
+    }
+    
+    public func setStringMetadata(
+        forKey metaKey: MetadataBook.Keys,
+        value: String,
+        forPeer peer: PeerID,
+        on: EventLoop? = nil
+    ) -> EventLoopFuture<Void> {
+        self.add(metaKey: metaKey, data: Array(value.utf8), toPeer: peer, on: on)
+    }
+
+    public func getAgentVersion(forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<String?> {
+        self.getStringMetadata(forKey: .AgentVersion, forPeer: peer, on: on)
+    }
+    
+    public func setAgentVersion(_ version: String, forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
+        self.setStringMetadata(forKey: .AgentVersion, value: version, forPeer: peer, on: on)
+    }
+
+    public func getProtocolVersion(forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<String?> {
+        self.getStringMetadata(forKey: .ProtocolVersion, forPeer: peer, on: on)
+    }
+    
+    public func setProtocolVersion(_ version: String, forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
+        self.setStringMetadata(forKey: .ProtocolVersion, value: version, forPeer: peer, on: on)
+    }
+
+    public func getObservedAddress(forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Multiaddr?> {
+        self.getStringMetadata(forKey: .ObservedAddress, forPeer: peer, on: on).map { string in
+            string.flatMap { try? Multiaddr($0) }
+        }
+    }
+    
+    public func setObservedAddress(_ address: Multiaddr, forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
+        self.setStringMetadata(forKey: .ObservedAddress, value: address.description, forPeer: peer, on: on)
+    }
 }
 
 // MARK: - Async
