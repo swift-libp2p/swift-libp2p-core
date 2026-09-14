@@ -805,6 +805,26 @@ extension PeerStore {
     public func count() async throws -> Int {
         try await self.count().get()
     }
+
+    public func getAllPeerIDs() async throws -> [PeerID] {
+        try await self.getAllPeerIDs(on: nil).get()
+    }
+
+    public func getAllPeerInfos() async throws -> [PeerInfo] {
+        try await self.getAllPeerInfos(on: nil).get()
+    }
+
+    public func getPeerIDs(supportingProtocol proto: SemVerProtocol) async throws -> [PeerID] {
+        try await self.getPeerIDs(supportingProtocol: proto, on: nil).get()
+    }
+
+    public func getPeers(matchingProtocol proto: SemVerProtocol) async throws -> [String] {
+        try await self.getPeers(matchingProtocol: proto, on: nil).get()
+    }
+
+    public func getPeerIDs(matchingProtocol proto: SemVerProtocol) async throws -> [PeerID] {
+        try await self.getPeerIDs(matchingProtocol: proto, on: nil).get()
+    }
 }
 
 extension KeyRepository {
@@ -906,8 +926,90 @@ extension MetadataRepository {
         try await self.remove(metaKey: metaKey, fromPeer: fromPeer, on: nil).get()
     }
 
+    public func remove(metaKey: MetadataBook.Keys, fromPeer: PeerID) async throws {
+        try await self.remove(metaKey: metaKey.rawValue, fromPeer: fromPeer, on: nil).get()
+    }
+
     public func getMetadata(forPeer: PeerID) async throws -> Metadata {
         try await self.getMetadata(forPeer: forPeer, on: nil).get()
+    }
+
+    // MARK: Typed
+
+    public func add(metaKey: String, value: some Encodable & Sendable, toPeer peer: PeerID) async throws {
+        let encoded = try Array(JSONEncoder().encode(value))
+        try await self.add(metaKey: metaKey, data: encoded, toPeer: peer, on: nil).get()
+    }
+
+    public func add(metaKey: MetadataBook.Keys, value: some Encodable & Sendable, toPeer peer: PeerID) async throws {
+        try await self.add(metaKey: metaKey.rawValue, value: value, toPeer: peer)
+    }
+
+    public func getMetadata<T: Decodable & Sendable>(
+        _ type: T.Type,
+        forKey metaKey: MetadataBook.Keys,
+        forPeer peer: PeerID
+    ) async throws -> T? {
+        try await self.getMetadata(type, forKey: metaKey, forPeer: peer, on: nil).get()
+    }
+
+    public func setLastHandshake(_ date: Date, forPeer peer: PeerID) async throws {
+        try await self.setLastHandshake(date, forPeer: peer, on: nil).get()
+    }
+
+    public func getLastHandshake(forPeer peer: PeerID) async throws -> Date? {
+        try await self.getLastHandshake(forPeer: peer, on: nil).get()
+    }
+
+    public func setDiscovered(_ date: Date, forPeer peer: PeerID) async throws {
+        try await self.setDiscovered(date, forPeer: peer, on: nil).get()
+    }
+
+    public func getDiscovered(forPeer peer: PeerID) async throws -> Date? {
+        try await self.getDiscovered(forPeer: peer, on: nil).get()
+    }
+
+    public func setPrunability(
+        _ prunable: MetadataBook.PrunableMetadata.Prunable,
+        forPeer peer: PeerID
+    ) async throws {
+        try await self.add(metaKey: .Prunable, value: MetadataBook.PrunableMetadata(prunable: prunable), toPeer: peer)
+    }
+
+    public func getPrunability(forPeer peer: PeerID) async throws -> MetadataBook.PrunableMetadata.Prunable {
+        try await self.getPrunability(forPeer: peer, on: nil).get()
+    }
+
+    public func setLatency(_ latency: MetadataBook.LatencyMetadata, forPeer peer: PeerID) async throws {
+        try await self.add(metaKey: .Latency, value: latency, toPeer: peer)
+    }
+
+    public func getLatency(forPeer peer: PeerID) async throws -> MetadataBook.LatencyMetadata? {
+        try await self.getLatency(forPeer: peer, on: nil).get()
+    }
+
+    public func setAgentVersion(_ version: String, forPeer peer: PeerID) async throws {
+        try await self.setAgentVersion(version, forPeer: peer, on: nil).get()
+    }
+    
+    public func getAgentVersion(forPeer peer: PeerID) async throws -> String? {
+        try await self.getAgentVersion(forPeer: peer, on: nil).get()
+    }
+
+    public func setProtocolVersion(_ version: String, forPeer peer: PeerID) async throws {
+        try await self.setProtocolVersion(version, forPeer: peer, on: nil).get()
+    }
+    
+    public func getProtocolVersion(forPeer peer: PeerID) async throws -> String? {
+        try await self.getProtocolVersion(forPeer: peer, on: nil).get()
+    }
+    
+    public func setObservedAddress(_ address: Multiaddr, forPeer peer: PeerID) async throws {
+        try await self.setObservedAddress(address, forPeer: peer, on: nil).get()
+    }
+
+    public func getObservedAddress(forPeer peer: PeerID) async throws -> Multiaddr? {
+        try await self.getObservedAddress(forPeer: peer, on: nil).get()
     }
 }
 
