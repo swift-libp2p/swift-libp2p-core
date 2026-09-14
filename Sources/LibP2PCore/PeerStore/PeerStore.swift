@@ -533,12 +533,16 @@ public struct MetadataBook: Sendable {
     }
 
     public struct PrunableMetadata: Codable, CustomStringConvertible, Sendable {
-        public enum Prunable: UInt8, Codable, Sendable {
+        /// How willing we are to evict a peer when the peerstore needs to make room.
+        public enum Prunable: UInt8, Codable, Sendable, CustomStringConvertible {
+            /// Evict freely. This is the default for any peer with no explicit prunability.
             case prunable = 0
+            /// Evict only once every `prunable` peer has been exhausted.
             case preferred
+            /// Never evict.
             case necessary
 
-            var description: String {
+            public var description: String {
                 switch self {
                 case .prunable: return "prunable"
                 case .preferred: return "preferred"
@@ -554,9 +558,7 @@ public struct MetadataBook: Sendable {
         public var prunable: Prunable
 
         public var description: String {
-            """
-            Peer Importance: \(prunable.description)")
-            """
+            "Peer Importance: \(prunable.description)"
         }
     }
 }
