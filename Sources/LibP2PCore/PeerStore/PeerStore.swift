@@ -392,12 +392,6 @@ public protocol KeyRepository {
     func add(key: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
     func remove(key: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
     func getKey(forPeer: String, on: EventLoop?) -> EventLoopFuture<PeerID>
-
-    //func getPublicKeys()
-    //func addPublicKey()
-    //func getKeyPairs()
-    //func addKeyPair()
-    //func getPeers() -> [PeerID]
 }
 
 extension KeyRepository {
@@ -416,16 +410,8 @@ extension KeyRepository {
 }
 
 public protocol AddressRepository {
-    /// Emits:
-    /// - onAddressAdded
-    /// - onAddressRemoved
-
-    //func addAddresses() -> Bool
-    //func upsertAddresses() -> Bool
-    //func updateAddresses() -> Bool
-    //func getAddresses() -> [Multiaddr]
-    //func clear() -> Bool
-    //func getPeers() -> [PeerID]
+    /// - TODO: These operations should emit `onAddressAdded` / `onAddressRemoved` events once the
+    ///   peerstore is wired into the `EventBus`. Nothing emits them today.
 
     func add(address: Multiaddr, toPeer: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
     func add(addresses: [Multiaddr], toPeer: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
@@ -587,14 +573,6 @@ extension MetadataRepository {
     public func add(metaKey: String, data: [UInt8], toPeer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
         add(metaKey: metaKey, data: data, toPeer: toPeer, on: on)
     }
-    //    func add<T:Codable>(metaKey:String, data:T, toPeer:PeerID, on:EventLoop? = nil) -> EventLoopFuture<Void> {
-    //        do {
-    //            let data = try JSONEncoder().encode(data)
-    //            return add(metaKey: metaKey, data: data, toPeer: toPeer, on: on)
-    //        } catch {
-    //            return (on ?? eventloop).makeFailedFuture(error)
-    //        }
-    //    }
     public func add(
         metaKey: MetadataBook.Keys,
         data: [UInt8],
