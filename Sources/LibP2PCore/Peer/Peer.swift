@@ -54,6 +54,32 @@ extension Multiaddr {
         }
         return try PeerID(cid: cid)
     }
+
+    /// Returns this `Multiaddr` with a `/p2p/<peer>` component appended, unless it already
+    /// carries one.
+    ///
+    /// - Returns: The address with the PeerID encapsulated, or the original if it was already
+    ///   present or if the encapsulation fails.
+    public func encapsulating(peer: PeerID) -> Multiaddr {
+        self.encapsulating(peer: peer.b58String)
+    }
+
+    /// Returns this `Multiaddr` with a `/p2p/<peer>` component appended, unless it already
+    /// carries one. See ``encapsulating(peer:)-(PeerID)``.
+    public func encapsulating(peer b58String: String) -> Multiaddr {
+        guard !self.protocols().contains(.p2p) else { return self }
+        return (try? self.encapsulate(proto: .p2p, address: b58String)) ?? self
+    }
+
+    /// This address with any trailing `/p2p` (or legacy `/ipfs`) component removed.
+    ///
+    /// Used to compare a bare transport address against a peer-qualified one.
+    public func decapsulatingPeerID() -> Multiaddr {
+        var stripped = self
+        if stripped.protocols().contains(.p2p) { stripped = stripped.decapsulate(.p2p) }
+        if stripped.protocols().contains(.ipfs) { stripped = stripped.decapsulate(.ipfs) }
+        return stripped
+    }
 }
 
 extension PeerInfo: CustomStringConvertible {
