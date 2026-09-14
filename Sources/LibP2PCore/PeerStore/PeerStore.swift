@@ -442,6 +442,12 @@ extension AddressRepository {
     public func getPeer(byAddress: Multiaddr, on: EventLoop? = nil) -> EventLoopFuture<String> {
         getPeer(byAddress: byAddress, on: on)
     }
+    public func getPeerID(byAddress address: Multiaddr, on: EventLoop? = nil) -> EventLoopFuture<PeerID> {
+        getPeerID(byAddress: address, on: on)
+    }
+    public func getPeerInfo(byAddress address: Multiaddr, on: EventLoop? = nil) -> EventLoopFuture<PeerInfo> {
+        getPeerInfo(byAddress: address, on: on)
+    }
 }
 
 public protocol ProtocolRepository {
@@ -466,6 +472,9 @@ extension ProtocolRepository {
     }
     public func remove(protocol: SemVerProtocol, fromPeer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
         remove(protocol: `protocol`, fromPeer: fromPeer, on: on)
+    }
+    public func remove(protocols: [SemVerProtocol], fromPeer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
+        remove(protocols: protocols, fromPeer: fromPeer, on: on)
     }
     public func getProtocols(forPeer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<[SemVerProtocol]> {
         getProtocols(forPeer: forPeer, on: on)
