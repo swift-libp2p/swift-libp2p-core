@@ -366,6 +366,27 @@ public protocol RecordRepository {
     func removeRecords(forPeer peer: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
 }
 
+// - IMPORTANT: These `EventLoop? = nil` default overloads can cause infinite
+//   recursion if the protocol conformer doesn't implement the methods. We need
+//   fix this.
+extension RecordRepository {
+    public func add(record: PeerRecord, on: EventLoop? = nil) -> EventLoopFuture<Void> {
+        add(record: record, on: on)
+    }
+    public func getRecords(forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<[PeerRecord]> {
+        getRecords(forPeer: peer, on: on)
+    }
+    public func getMostRecentRecord(forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<PeerRecord?> {
+        getMostRecentRecord(forPeer: peer, on: on)
+    }
+    public func trimRecords(forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
+        trimRecords(forPeer: peer, on: on)
+    }
+    public func removeRecords(forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
+        removeRecords(forPeer: peer, on: on)
+    }
+}
+
 public protocol KeyRepository {
     func removeAllKeys(on: EventLoop?) -> EventLoopFuture<Void>
     func add(key: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
