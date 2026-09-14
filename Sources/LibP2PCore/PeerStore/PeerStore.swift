@@ -564,19 +564,15 @@ public struct MetadataBook: Sendable {
 }
 
 public protocol MetadataRepository {
-    //var eventLoop:EventLoop { get }
-
     func removeAllMetadata(forPeer: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
     func add(metaKey: String, data: [UInt8], toPeer: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
     func add(metaKey: MetadataBook.Keys, data: [UInt8], toPeer: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
     func remove(metaKey: String, fromPeer: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
-    //func remove(metaKey:MetadataBook.Keys, fromPeer:PeerID, on:EventLoop?) -> EventLoopFuture<Void>
     func getMetadata(forPeer: PeerID, on: EventLoop?) -> EventLoopFuture<Metadata>
     //func getMetadata(metaKey:String, forPeer:PeerID, on:EventLoop?) -> EventLoopFuture<(key:String, value: [UInt8])>
     //func getMetadata(metaKey:MetadataBook.Keys, forPeer:PeerID, on:EventLoop?) -> EventLoopFuture<(key:String, value: [UInt8])>
 }
 
-/// TODO:  Switch from data to Codable, we handle encoding / decoding return typed values when possible...
 extension MetadataRepository {
     public func removeAllMetadata(forPeer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
         removeAllMetadata(forPeer: forPeer, on: on)
