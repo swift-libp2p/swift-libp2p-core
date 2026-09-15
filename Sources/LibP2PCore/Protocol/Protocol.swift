@@ -125,11 +125,22 @@ public struct SemVerProtocol: Equatable, Hashable, Sendable {
     }
 
     public struct ProtocolVersion: Equatable, Hashable, Sendable {
-        let major: Int
-        let minor: Int
-        let patch: Int
+        public let major: Int
+        public let minor: Int
+        public let patch: Int
 
-        var stringValue: String {
+        /// - Note: This initializer is `public` so that the ranged ``SemVersion`` cases
+        ///   (`.from`, `.upToNextMinor`, `.upToNextMajor`) are constructable outside
+        ///   `LibP2PCore`. With the memberwise initializer left at its default `internal`
+        ///   visibility they weren't, which made ``SemVerProtocol/matches(_:)``'s range
+        ///   semantics — and any peerstore query built on them — unreachable for clients.
+        public init(major: Int, minor: Int, patch: Int) {
+            self.major = major
+            self.minor = minor
+            self.patch = patch
+        }
+
+        public var stringValue: String {
             "\(major).\(minor).\(patch)"
         }
     }

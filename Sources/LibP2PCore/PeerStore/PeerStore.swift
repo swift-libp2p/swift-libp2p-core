@@ -12,37 +12,72 @@
 //
 //===----------------------------------------------------------------------===//
 
+import Foundation
 import NIOConcurrencyHelpers
 import NIOCore
 
 public typealias Metadata = [String: [UInt8]]
 
+/// Everything we know about this peer
+///
+/// `ComprehensivePeer` includes the following:
+/// - Their `PeerID` (public key)
+/// - Known addresses
+/// - Supported protocols
+/// - Arbitrary metadata
+/// - Signed `PeerRecord`s
+///
+/// - Note: Changes made to this object do NOT propogate back to the peerstore
+///   Use the dedicated peerstore methods to persist changes.
 public final class ComprehensivePeer: Sendable {
     public let id: PeerID
 
+    /// The mutable state of a `ComprehensivePeer`, guarded by a single lock so that composite
+    /// reads are consistent.
+    fileprivate struct State: Sendable {
+        var addresses: Set<Multiaddr>
+        var protocols: Set<SemVerProtocol>
+        var metadata: Metadata
+        var records: Set<PeerRecord>
+    }
+
+    private let state: NIOLockedValueBox<State>
+
+    /// The addresses associated with this peer
+    ///
+    /// - Note: Consider using  the ``insert(address:)``/ ``remove(address:)``
+    ///   functions instead of setting this parameter directly
     public var addresses: Set<Multiaddr> {
-        get { _addresses.withLockedValue { $0 } }
-        set { _addresses.withLockedValue { $0 = newValue } }
+        get { self.state.withLockedValue { $0.addresses } }
+        set { self.state.withLockedValue { $0.addresses = newValue } }
     }
-    private let _addresses: NIOLockedValueBox<Set<Multiaddr>>
 
+    /// The protocols this peer claims to speak
+    ///
+    /// - Note: Consider using  the ``insert(protocol:)``/ ``remove(protocol:)``
+    ///   functions instead of setting this parameter directly
     public var protocols: Set<SemVerProtocol> {
-        get { _protocols.withLockedValue { $0 } }
-        set { _protocols.withLockedValue { $0 = newValue } }
+        get { self.state.withLockedValue { $0.protocols } }
+        set { self.state.withLockedValue { $0.protocols = newValue } }
     }
-    private let _protocols: NIOLockedValueBox<Set<SemVerProtocol>>
 
+    /// The Metadata associated with this peer
+    ///
+    /// - Note: Consider using  the ``setMetadata(:, forKey:)``/ ``metadata(forKey:)``
+    ///   functions instead of setting this parameter directly
     public var metadata: Metadata {
-        get { _metadata.withLockedValue { $0 } }
-        set { _metadata.withLockedValue { $0 = newValue } }
+        get { self.state.withLockedValue { $0.metadata } }
+        set { self.state.withLockedValue { $0.metadata = newValue } }
     }
-    private let _metadata: NIOLockedValueBox<Metadata>
 
+    /// The signed Records we have for this Peer
+    ///
+    /// - Note: Consider using  the ``insert(record:, keepingMostRecent:)``
+    ///   function instead of setting this parameter directly
     public var records: Set<PeerRecord> {
-        get { _records.withLockedValue { $0 } }
-        set { _records.withLockedValue { $0 = newValue } }
+        get { self.state.withLockedValue { $0.records } }
+        set { self.state.withLockedValue { $0.records = newValue } }
     }
-    private let _records: NIOLockedValueBox<Set<PeerRecord>>
 
     public init(
         id: PeerID,
@@ -52,42 +87,146 @@ public final class ComprehensivePeer: Sendable {
         records: Set<PeerRecord> = []
     ) {
         self.id = id
-        self._addresses = .init(addresses)
-        self._protocols = .init(protocols)
-        self._metadata = .init(metadata)
-        self._records = .init(records)
+        self.state = .init(
+            State(addresses: addresses, protocols: protocols, metadata: metadata, records: records)
+        )
     }
 
-    //public func add(address: Multiaddr) {
-    //    self._addresses.withLockedValue { $0.insert(address) }
-    //}
-    //
-    //public func add(protocol: SemVerProtocol) {
-    //    self._protocols.withLockedValue { $0.insert(`protocol`) }
-    //}
-    //
-    //public func addMetadata(key: String, value: [UInt8]) {
-    //    self._metadata.withLockedValue { $0[key] = value }
-    //}
-    //
-    //public func add(record: PeerRecord) {
-    //    self._records.withLockedValue { $0.insert(record) }
-    //}
+    /// Inserts an address, returning `true` if it wasn't already known.
+    @discardableResult
+    public func insert(address: Multiaddr) -> Bool {
+        self.state.withLockedValue { $0.addresses.insert(address).inserted }
+    }
+
+    /// Inserts a batch of addresses in a single atomic operation.
+    public func insert(addresses: some Sequence<Multiaddr>) {
+        self.state.withLockedValue { $0.addresses.formUnion(addresses) }
+    }
+
+    /// Removes an address, returning it if there was a match.
+    @discardableResult
+    public func remove(address: Multiaddr) -> Multiaddr? {
+        self.state.withLockedValue { $0.addresses.remove(address) }
+    }
+
+    /// Removes all addresses from this peer
+    public func removeAllAddresses() {
+        self.state.withLockedValue { $0.addresses.removeAll() }
+    }
+
+    /// Inserts a protocol, returning `true` if it wasn't already known.
+    @discardableResult
+    public func insert(protocol proto: SemVerProtocol) -> Bool {
+        self.state.withLockedValue { $0.protocols.insert(proto).inserted }
+    }
+
+    /// Inserts a batch of protocols in a single atomic operation.
+    public func insert(protocols: some Sequence<SemVerProtocol>) {
+        self.state.withLockedValue { $0.protocols.formUnion(protocols) }
+    }
+
+    /// Removes a protocol, returning it if there was a match.
+    @discardableResult
+    public func remove(protocol proto: SemVerProtocol) -> SemVerProtocol? {
+        self.state.withLockedValue { $0.protocols.remove(proto) }
+    }
+
+    /// Removes a batch of protocols in a single atomic operation
+    public func remove(protocols: some Sequence<SemVerProtocol>) {
+        self.state.withLockedValue { $0.protocols.subtract(protocols) }
+    }
+
+    /// Removes all protocols from this peer
+    public func removeAllProtocols() {
+        self.state.withLockedValue { $0.protocols.removeAll() }
+    }
+
+    /// Sets (or, when `value` is `nil`, removes) a single metadata entry.
+    public func setMetadata(_ value: [UInt8]?, forKey key: String) {
+        self.state.withLockedValue { $0.metadata[key] = value }
+    }
+
+    /// Reads a single metadata entry.
+    public func metadata(forKey key: String) -> [UInt8]? {
+        self.state.withLockedValue { $0.metadata[key] }
+    }
+
+    /// Removes all metadata from this peer
+    public func removeAllMetadata() {
+        self.state.withLockedValue { $0.metadata.removeAll() }
+    }
+
+    /// Inserts a `PeerRecord`, then keeps the most `limit` recent records.
+    ///
+    /// Records are considered duplicates when they share a sequence number.
+    ///
+    /// - Returns: `true` if the record was new, `false` if a record with that sequence number was
+    ///   already present or if the record was older than the existing `limit` records.
+    @discardableResult
+    public func insert(record: PeerRecord, keepingMostRecent limit: Int) -> Bool {
+        self.state.withLockedValue { state in
+            guard !state.records.contains(where: { $0.sequenceNumber == record.sequenceNumber }) else {
+                return false
+            }
+            state.records.insert(record)
+            Self.trim(&state.records, keepingMostRecent: limit)
+            return state.records.contains(record)
+        }
+    }
+
+    /// Trims the record set down to the `limit` most recent records (by sequence number).
+    public func trimRecords(keepingMostRecent limit: Int) {
+        self.state.withLockedValue { Self.trim(&$0.records, keepingMostRecent: limit) }
+    }
+
+    /// Removes all of the records associated with this peer.
+    public func removeAllRecords() {
+        self.state.withLockedValue { $0.records.removeAll() }
+    }
+
+    private static func trim(_ records: inout Set<PeerRecord>, keepingMostRecent limit: Int) {
+        guard limit >= 0 else { return }
+        guard records.count > limit else { return }
+        records = Set(
+            records.sorted { $0.sequenceNumber > $1.sequenceNumber }.prefix(limit)
+        )
+    }
+
+    /// Returns a detached copy of this peer, taken under a single lock acquisition.
+    ///
+    /// Use this when handing a peer out across an API boundary so callers can't mutate the
+    /// store's live state behind its back.
+    public func copy() -> ComprehensivePeer {
+        let state = self.state.withLockedValue { $0 }
+        return ComprehensivePeer(
+            id: self.id,
+            addresses: state.addresses,
+            protocols: state.protocols,
+            metadata: state.metadata,
+            records: state.records
+        )
+    }
+
+    /// The peer's `PeerID` paired with its currently known addresses.
+    public var peerInfo: PeerInfo {
+        PeerInfo(peer: self.id, addresses: Array(self.addresses))
+    }
 }
 
 extension ComprehensivePeer: CustomStringConvertible {
     public var description: String {
+        let state = self.state.withLockedValue { $0 }
         let header = "--- 👥 \(self.id) 👥 ---"
         return """
             \(header)
             ☎️ Addresses:
-            \t- \(self.addresses.map { $0.description }.joined(separator: "\n\t- "))
+            \t- \(state.addresses.map { $0.description }.joined(separator: "\n\t- "))
             📒 Protocols:
-            \t- \(self.protocols.map { $0.stringValue }.joined(separator: "\n\t- "))
+            \t- \(state.protocols.map { $0.stringValue }.joined(separator: "\n\t- "))
             ℹ️ MetaData:
-            \t- \(self.metadata.map { "\($0.key) - \(String(data: Data($0.value), encoding: .utf8) ?? $0.value.description)" }.joined(separator: "\n\t- "))
+            \t- \(state.metadata.map { "\($0.key) - \(String(data: Data($0.value), encoding: .utf8) ?? $0.value.description)" }.joined(separator: "\n\t- "))
             📜 Records:
-            \t\(self.records.map { "\($0.description.replacingOccurrences(of: "\n", with: "\n\t"))" }.joined(separator: "\n\t"))
+            \t\(state.records.map { "\($0.description.replacingOccurrences(of: "\n", with: "\n\t"))" }.joined(separator: "\n\t"))
             \(String(repeating: "-", count: header.count + 2))
             """
     }
@@ -96,10 +235,37 @@ extension ComprehensivePeer: CustomStringConvertible {
 public protocol PeerStore: KeyRepository, AddressRepository, ProtocolRepository, MetadataRepository, RecordRepository,
     Sendable
 {
+    /// Returns a collection of every peer in the PeerStore
+    ///
+    /// - Warning: This can be slow and resource heavy if the peerstore contains a large
+    ///   number of peers.
     func all() -> EventLoopFuture<[ComprehensivePeer]>
+
+    /// Returns the number of Peers that are currently stored in the PeerStore
     func count() -> EventLoopFuture<Int>
+
+    /// Logs the specified peer to the console
     func dump(peer: PeerID)
+
+    /// Logs the entire PeerStore to the console
     func dumpAll()
+
+    /// Every `PeerID` currently held by the store.
+    func getAllPeerIDs(on: EventLoop?) -> EventLoopFuture<[PeerID]>
+
+    /// Every peer currently held by the store, paired with their known addresses.
+    func getAllPeerInfos(on: EventLoop?) -> EventLoopFuture<[PeerInfo]>
+
+    /// The `PeerID`s of every peer known to support `supportingProtocol` **exactly**.
+    func getPeerIDs(supportingProtocol: SemVerProtocol, on: EventLoop?) -> EventLoopFuture<[PeerID]>
+
+    /// The b58 identifiers of every peer supporting a protocol *compatible* with
+    /// `matchingProtocol`, using ``SemVerProtocol/matches(_:)`` semantics.
+    func getPeers(matchingProtocol: SemVerProtocol, on: EventLoop?) -> EventLoopFuture<[String]>
+
+    /// The `PeerID`s of every peer supporting a protocol *compatible* with
+    /// `matchingProtocol`,  using ``SemVerProtocol/matches(_:)`` semantics.
+    func getPeerIDs(matchingProtocol: SemVerProtocol, on: EventLoop?) -> EventLoopFuture<[PeerID]>
 }
 
 extension PeerStore {
@@ -135,6 +301,60 @@ extension PeerStore {
     public func getPeerInfo(byID id: String, on: EventLoop? = nil) async throws -> PeerInfo {
         try await self.getPeerInfo(byID: id, on: on).get()
     }
+
+    public func getAllPeerIDs(on: EventLoop?) -> EventLoopFuture<[PeerID]> {
+        self.all().map { peers in peers.map { $0.id } }.hopIfNeeded(to: on)
+    }
+
+    public func getAllPeerIDs() -> EventLoopFuture<[PeerID]> {
+        self.getAllPeerIDs(on: nil)
+    }
+
+    public func getAllPeerInfos(on: EventLoop?) -> EventLoopFuture<[PeerInfo]> {
+        self.all().map { peers in peers.map { $0.peerInfo } }.hopIfNeeded(to: on)
+    }
+
+    public func getAllPeerInfos() -> EventLoopFuture<[PeerInfo]> {
+        self.getAllPeerInfos(on: nil)
+    }
+
+    public func getPeerIDs(supportingProtocol proto: SemVerProtocol, on: EventLoop?) -> EventLoopFuture<[PeerID]> {
+        self.all().map { peers in
+            peers.filter { $0.protocols.contains(proto) }.map { $0.id }
+        }.hopIfNeeded(to: on)
+    }
+
+    public func getPeerIDs(supportingProtocol proto: SemVerProtocol) -> EventLoopFuture<[PeerID]> {
+        self.getPeerIDs(supportingProtocol: proto, on: nil)
+    }
+
+    public func getPeers(matchingProtocol proto: SemVerProtocol, on: EventLoop?) -> EventLoopFuture<[String]> {
+        self.all().map { peers in
+            peers.filter { $0.protocols.contains { $0.matches(proto) } }.map { $0.id.b58String }
+        }.hopIfNeeded(to: on)
+    }
+
+    public func getPeers(matchingProtocol proto: SemVerProtocol) -> EventLoopFuture<[String]> {
+        self.getPeers(matchingProtocol: proto, on: nil)
+    }
+
+    public func getPeerIDs(matchingProtocol proto: SemVerProtocol, on: EventLoop?) -> EventLoopFuture<[PeerID]> {
+        self.all().map { peers in
+            peers.filter { $0.protocols.contains { $0.matches(proto) } }.map { $0.id }
+        }.hopIfNeeded(to: on)
+    }
+
+    public func getPeerIDs(matchingProtocol proto: SemVerProtocol) -> EventLoopFuture<[PeerID]> {
+        self.getPeerIDs(matchingProtocol: proto, on: nil)
+    }
+}
+
+extension EventLoopFuture {
+    /// `hop(to:)` when a destination loop was supplied, otherwise a no-op.
+    internal func hopIfNeeded(to eventLoop: EventLoop?) -> EventLoopFuture<Value> {
+        guard let eventLoop else { return self }
+        return self.hop(to: eventLoop)
+    }
 }
 
 public protocol RecordRepository {
@@ -145,17 +365,32 @@ public protocol RecordRepository {
     func removeRecords(forPeer peer: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
 }
 
+// - IMPORTANT: These `EventLoop? = nil` default overloads can cause infinite
+//   recursion if the protocol conformer doesn't implement the methods. We need
+//   fix this.
+extension RecordRepository {
+    public func add(record: PeerRecord, on: EventLoop? = nil) -> EventLoopFuture<Void> {
+        add(record: record, on: on)
+    }
+    public func getRecords(forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<[PeerRecord]> {
+        getRecords(forPeer: peer, on: on)
+    }
+    public func getMostRecentRecord(forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<PeerRecord?> {
+        getMostRecentRecord(forPeer: peer, on: on)
+    }
+    public func trimRecords(forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
+        trimRecords(forPeer: peer, on: on)
+    }
+    public func removeRecords(forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
+        removeRecords(forPeer: peer, on: on)
+    }
+}
+
 public protocol KeyRepository {
     func removeAllKeys(on: EventLoop?) -> EventLoopFuture<Void>
     func add(key: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
     func remove(key: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
     func getKey(forPeer: String, on: EventLoop?) -> EventLoopFuture<PeerID>
-
-    //func getPublicKeys()
-    //func addPublicKey()
-    //func getKeyPairs()
-    //func addKeyPair()
-    //func getPeers() -> [PeerID]
 }
 
 extension KeyRepository {
@@ -174,16 +409,8 @@ extension KeyRepository {
 }
 
 public protocol AddressRepository {
-    /// Emits:
-    /// - onAddressAdded
-    /// - onAddressRemoved
-
-    //func addAddresses() -> Bool
-    //func upsertAddresses() -> Bool
-    //func updateAddresses() -> Bool
-    //func getAddresses() -> [Multiaddr]
-    //func clear() -> Bool
-    //func getPeers() -> [PeerID]
+    /// - TODO: These operations should emit `onAddressAdded` / `onAddressRemoved` events once the
+    ///   peerstore is wired into the `EventBus`. Nothing emits them today.
 
     func add(address: Multiaddr, toPeer: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
     func add(addresses: [Multiaddr], toPeer: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
@@ -214,6 +441,12 @@ extension AddressRepository {
     public func getPeer(byAddress: Multiaddr, on: EventLoop? = nil) -> EventLoopFuture<String> {
         getPeer(byAddress: byAddress, on: on)
     }
+    public func getPeerID(byAddress address: Multiaddr, on: EventLoop? = nil) -> EventLoopFuture<PeerID> {
+        getPeerID(byAddress: address, on: on)
+    }
+    public func getPeerInfo(byAddress address: Multiaddr, on: EventLoop? = nil) -> EventLoopFuture<PeerInfo> {
+        getPeerInfo(byAddress: address, on: on)
+    }
 }
 
 public protocol ProtocolRepository {
@@ -238,6 +471,9 @@ extension ProtocolRepository {
     }
     public func remove(protocol: SemVerProtocol, fromPeer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
         remove(protocol: `protocol`, fromPeer: fromPeer, on: on)
+    }
+    public func remove(protocols: [SemVerProtocol], fromPeer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
+        remove(protocols: protocols, fromPeer: fromPeer, on: on)
     }
     public func getProtocols(forPeer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<[SemVerProtocol]> {
         getProtocols(forPeer: forPeer, on: on)
@@ -296,12 +532,16 @@ public struct MetadataBook: Sendable {
     }
 
     public struct PrunableMetadata: Codable, CustomStringConvertible, Sendable {
-        public enum Prunable: UInt8, Codable, Sendable {
+        /// How willing we are to evict a peer when the peerstore needs to make room.
+        public enum Prunable: UInt8, Codable, Sendable, CustomStringConvertible {
+            /// Evict freely. This is the default for any peer with no explicit prunability.
             case prunable = 0
+            /// Evict only once every `prunable` peer has been exhausted.
             case preferred
+            /// Never evict.
             case necessary
 
-            var description: String {
+            public var description: String {
                 switch self {
                 case .prunable: return "prunable"
                 case .preferred: return "preferred"
@@ -317,27 +557,21 @@ public struct MetadataBook: Sendable {
         public var prunable: Prunable
 
         public var description: String {
-            """
-            Peer Importance: \(prunable.description)")
-            """
+            "Peer Importance: \(prunable.description)"
         }
     }
 }
 
 public protocol MetadataRepository {
-    //var eventLoop:EventLoop { get }
-
     func removeAllMetadata(forPeer: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
     func add(metaKey: String, data: [UInt8], toPeer: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
     func add(metaKey: MetadataBook.Keys, data: [UInt8], toPeer: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
     func remove(metaKey: String, fromPeer: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
-    //func remove(metaKey:MetadataBook.Keys, fromPeer:PeerID, on:EventLoop?) -> EventLoopFuture<Void>
     func getMetadata(forPeer: PeerID, on: EventLoop?) -> EventLoopFuture<Metadata>
     //func getMetadata(metaKey:String, forPeer:PeerID, on:EventLoop?) -> EventLoopFuture<(key:String, value: [UInt8])>
     //func getMetadata(metaKey:MetadataBook.Keys, forPeer:PeerID, on:EventLoop?) -> EventLoopFuture<(key:String, value: [UInt8])>
 }
 
-/// TODO:  Switch from data to Codable, we handle encoding / decoding return typed values when possible...
 extension MetadataRepository {
     public func removeAllMetadata(forPeer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
         removeAllMetadata(forPeer: forPeer, on: on)
@@ -345,14 +579,6 @@ extension MetadataRepository {
     public func add(metaKey: String, data: [UInt8], toPeer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
         add(metaKey: metaKey, data: data, toPeer: toPeer, on: on)
     }
-    //    func add<T:Codable>(metaKey:String, data:T, toPeer:PeerID, on:EventLoop? = nil) -> EventLoopFuture<Void> {
-    //        do {
-    //            let data = try JSONEncoder().encode(data)
-    //            return add(metaKey: metaKey, data: data, toPeer: toPeer, on: on)
-    //        } catch {
-    //            return (on ?? eventloop).makeFailedFuture(error)
-    //        }
-    //    }
     public func add(
         metaKey: MetadataBook.Keys,
         data: [UInt8],
@@ -364,15 +590,217 @@ extension MetadataRepository {
     public func remove(metaKey: String, fromPeer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
         remove(metaKey: metaKey, fromPeer: fromPeer, on: on)
     }
-    //func remove(metaKey:MetadataBook.Keys, fromPeer:PeerID, on:EventLoop? = nil) -> EventLoopFuture<Void> {
-    //    remove(metaKey: metaKey.rawValue, fromPeer: fromPeer, on: on)
-    //}
+    public func remove(metaKey: MetadataBook.Keys, fromPeer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
+        remove(metaKey: metaKey.rawValue, fromPeer: fromPeer, on: on)
+    }
     public func getMetadata(forPeer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Metadata> {
         getMetadata(forPeer: forPeer, on: on)
     }
-    //func getMetadata(metaKey: String, forPeer:PeerID, on:EventLoop? = nil) -> EventLoopFuture<(key:String, value: [UInt8])> {
-    //    getMetadata(metaKey: metaKey, forPeer: forPeer, on: on)
-    //}
+}
+
+// MARK: - Typed Metadata
+
+/// Typed accessors layered over the raw `[String: [UInt8]]` metadata book.
+///
+/// The standard metadata types are encoded using the following rules:
+/// - `Codable` values (``MetadataBook/LatencyMetadata``, ``MetadataBook/PrunableMetadata``) are
+///   JSON.
+/// - Timestamps (`lastHandshake`, `discovered`) are the UTF-8 decimal rendering of a
+///   `timeIntervalSince1970`.
+/// - Strings (`agentVersion`, `protocolVersion`, `observedAddress`) are raw UTF-8.
+extension MetadataRepository {
+
+    // MARK: Generic Codable access
+
+    /// Stores `value` as JSON under `metaKey`.
+    ///
+    /// - Note: `on` is non-optional here because an encoding failure needs an `EventLoop` to fail
+    ///   on. Use the `async` overload when you don't have one to hand.
+    public func add(
+        metaKey: String,
+        value: some Encodable & Sendable,
+        toPeer peer: PeerID,
+        on: EventLoop
+    ) -> EventLoopFuture<Void> {
+        do {
+            let encoded = try Array(JSONEncoder().encode(value))
+            return self.add(metaKey: metaKey, data: encoded, toPeer: peer, on: on)
+        } catch {
+            return on.makeFailedFuture(error)
+        }
+    }
+
+    public func add(
+        metaKey: MetadataBook.Keys,
+        value: some Encodable & Sendable,
+        toPeer peer: PeerID,
+        on: EventLoop
+    ) -> EventLoopFuture<Void> {
+        self.add(metaKey: metaKey.rawValue, value: value, toPeer: peer, on: on)
+    }
+
+    /// Decodes the JSON value stored under `metaKey`, or `nil` when absent or undecodable.
+    public func getMetadata<T: Decodable & Sendable>(
+        _ type: T.Type,
+        forKey metaKey: String,
+        forPeer peer: PeerID,
+        on: EventLoop? = nil
+    ) -> EventLoopFuture<T?> {
+        self.getMetadata(forPeer: peer, on: on).map { metadata in
+            guard let raw = metadata[metaKey] else { return nil }
+            return try? JSONDecoder().decode(T.self, from: Data(raw))
+        }
+    }
+
+    public func getMetadata<T: Decodable & Sendable>(
+        _ type: T.Type,
+        forKey metaKey: MetadataBook.Keys,
+        forPeer peer: PeerID,
+        on: EventLoop? = nil
+    ) -> EventLoopFuture<T?> {
+        self.getMetadata(type, forKey: metaKey.rawValue, forPeer: peer, on: on)
+    }
+
+    // MARK: Timestamps
+
+    /// Encodes a `Date` the way the metadata book has always stored timestamps: the UTF-8
+    /// decimal rendering of its `timeIntervalSince1970`.
+    public static func encodeTimestamp(_ date: Date) -> [UInt8] {
+        Array("\(date.timeIntervalSince1970)".utf8)
+    }
+
+    /// The inverse of ``encodeTimestamp(_:)``.
+    public static func decodeTimestamp(_ bytes: [UInt8]) -> Date? {
+        guard let interval = Double(String(decoding: bytes, as: UTF8.self)) else { return nil }
+        return Date(timeIntervalSince1970: interval)
+    }
+
+    public func setLastHandshake(
+        _ date: Date,
+        forPeer peer: PeerID,
+        on: EventLoop? = nil
+    ) -> EventLoopFuture<Void> {
+        self.add(metaKey: .LastHandshake, data: Self.encodeTimestamp(date), toPeer: peer, on: on)
+    }
+
+    public func getLastHandshake(forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Date?> {
+        self.getMetadata(forPeer: peer, on: on).map { metadata in
+            metadata[MetadataBook.Keys.LastHandshake.rawValue].flatMap(Self.decodeTimestamp)
+        }
+    }
+
+    public func setDiscovered(
+        _ date: Date,
+        forPeer peer: PeerID,
+        on: EventLoop? = nil
+    ) -> EventLoopFuture<Void> {
+        self.add(metaKey: .Discovered, data: Self.encodeTimestamp(date), toPeer: peer, on: on)
+    }
+
+    public func getDiscovered(forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Date?> {
+        self.getMetadata(forPeer: peer, on: on).map { metadata in
+            metadata[MetadataBook.Keys.Discovered.rawValue].flatMap(Self.decodeTimestamp)
+        }
+    }
+
+    // MARK: Prunability
+
+    /// Marks how willing the peerstore should be to evict this peer under memory pressure.
+    ///
+    /// - Note: Peers with no explicit prunability are treated as ``MetadataBook/PrunableMetadata/Prunable/prunable``.
+    public func setPrunability(
+        _ prunable: MetadataBook.PrunableMetadata.Prunable,
+        forPeer peer: PeerID,
+        on: EventLoop
+    ) -> EventLoopFuture<Void> {
+        self.add(
+            metaKey: .Prunable,
+            value: MetadataBook.PrunableMetadata(prunable: prunable),
+            toPeer: peer,
+            on: on
+        )
+    }
+
+    public func getPrunability(
+        forPeer peer: PeerID,
+        on: EventLoop? = nil
+    ) -> EventLoopFuture<MetadataBook.PrunableMetadata.Prunable> {
+        self.getMetadata(MetadataBook.PrunableMetadata.self, forKey: .Prunable, forPeer: peer, on: on)
+            .map { $0?.prunable ?? .prunable }
+    }
+
+    // MARK: Latency
+
+    public func setLatency(
+        _ latency: MetadataBook.LatencyMetadata,
+        forPeer peer: PeerID,
+        on: EventLoop
+    ) -> EventLoopFuture<Void> {
+        self.add(metaKey: .Latency, value: latency, toPeer: peer, on: on)
+    }
+
+    public func getLatency(
+        forPeer peer: PeerID,
+        on: EventLoop? = nil
+    ) -> EventLoopFuture<MetadataBook.LatencyMetadata?> {
+        self.getMetadata(MetadataBook.LatencyMetadata.self, forKey: .Latency, forPeer: peer, on: on)
+    }
+
+    // MARK: Plain-string entries
+
+    public func getStringMetadata(
+        forKey metaKey: MetadataBook.Keys,
+        forPeer peer: PeerID,
+        on: EventLoop? = nil
+    ) -> EventLoopFuture<String?> {
+        self.getMetadata(forPeer: peer, on: on).map { metadata in
+            metadata[metaKey.rawValue].map { String(decoding: $0, as: UTF8.self) }
+        }
+    }
+
+    public func setStringMetadata(
+        forKey metaKey: MetadataBook.Keys,
+        value: String,
+        forPeer peer: PeerID,
+        on: EventLoop? = nil
+    ) -> EventLoopFuture<Void> {
+        self.add(metaKey: metaKey, data: Array(value.utf8), toPeer: peer, on: on)
+    }
+
+    public func getAgentVersion(forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<String?> {
+        self.getStringMetadata(forKey: .AgentVersion, forPeer: peer, on: on)
+    }
+
+    public func setAgentVersion(_ version: String, forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void>
+    {
+        self.setStringMetadata(forKey: .AgentVersion, value: version, forPeer: peer, on: on)
+    }
+
+    public func getProtocolVersion(forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<String?> {
+        self.getStringMetadata(forKey: .ProtocolVersion, forPeer: peer, on: on)
+    }
+
+    public func setProtocolVersion(
+        _ version: String,
+        forPeer peer: PeerID,
+        on: EventLoop? = nil
+    ) -> EventLoopFuture<Void> {
+        self.setStringMetadata(forKey: .ProtocolVersion, value: version, forPeer: peer, on: on)
+    }
+
+    public func getObservedAddress(forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Multiaddr?> {
+        self.getStringMetadata(forKey: .ObservedAddress, forPeer: peer, on: on).map { string in
+            string.flatMap { try? Multiaddr($0) }
+        }
+    }
+
+    public func setObservedAddress(
+        _ address: Multiaddr,
+        forPeer peer: PeerID,
+        on: EventLoop? = nil
+    ) -> EventLoopFuture<Void> {
+        self.setStringMetadata(forKey: .ObservedAddress, value: address.description, forPeer: peer, on: on)
+    }
 }
 
 // MARK: - Async
@@ -384,6 +812,26 @@ extension PeerStore {
 
     public func count() async throws -> Int {
         try await self.count().get()
+    }
+
+    public func getAllPeerIDs() async throws -> [PeerID] {
+        try await self.getAllPeerIDs(on: nil).get()
+    }
+
+    public func getAllPeerInfos() async throws -> [PeerInfo] {
+        try await self.getAllPeerInfos(on: nil).get()
+    }
+
+    public func getPeerIDs(supportingProtocol proto: SemVerProtocol) async throws -> [PeerID] {
+        try await self.getPeerIDs(supportingProtocol: proto, on: nil).get()
+    }
+
+    public func getPeers(matchingProtocol proto: SemVerProtocol) async throws -> [String] {
+        try await self.getPeers(matchingProtocol: proto, on: nil).get()
+    }
+
+    public func getPeerIDs(matchingProtocol proto: SemVerProtocol) async throws -> [PeerID] {
+        try await self.getPeerIDs(matchingProtocol: proto, on: nil).get()
     }
 }
 
@@ -486,8 +934,90 @@ extension MetadataRepository {
         try await self.remove(metaKey: metaKey, fromPeer: fromPeer, on: nil).get()
     }
 
+    public func remove(metaKey: MetadataBook.Keys, fromPeer: PeerID) async throws {
+        try await self.remove(metaKey: metaKey.rawValue, fromPeer: fromPeer, on: nil).get()
+    }
+
     public func getMetadata(forPeer: PeerID) async throws -> Metadata {
         try await self.getMetadata(forPeer: forPeer, on: nil).get()
+    }
+
+    // MARK: Typed
+
+    public func add(metaKey: String, value: some Encodable & Sendable, toPeer peer: PeerID) async throws {
+        let encoded = try Array(JSONEncoder().encode(value))
+        try await self.add(metaKey: metaKey, data: encoded, toPeer: peer, on: nil).get()
+    }
+
+    public func add(metaKey: MetadataBook.Keys, value: some Encodable & Sendable, toPeer peer: PeerID) async throws {
+        try await self.add(metaKey: metaKey.rawValue, value: value, toPeer: peer)
+    }
+
+    public func getMetadata<T: Decodable & Sendable>(
+        _ type: T.Type,
+        forKey metaKey: MetadataBook.Keys,
+        forPeer peer: PeerID
+    ) async throws -> T? {
+        try await self.getMetadata(type, forKey: metaKey, forPeer: peer, on: nil).get()
+    }
+
+    public func setLastHandshake(_ date: Date, forPeer peer: PeerID) async throws {
+        try await self.setLastHandshake(date, forPeer: peer, on: nil).get()
+    }
+
+    public func getLastHandshake(forPeer peer: PeerID) async throws -> Date? {
+        try await self.getLastHandshake(forPeer: peer, on: nil).get()
+    }
+
+    public func setDiscovered(_ date: Date, forPeer peer: PeerID) async throws {
+        try await self.setDiscovered(date, forPeer: peer, on: nil).get()
+    }
+
+    public func getDiscovered(forPeer peer: PeerID) async throws -> Date? {
+        try await self.getDiscovered(forPeer: peer, on: nil).get()
+    }
+
+    public func setPrunability(
+        _ prunable: MetadataBook.PrunableMetadata.Prunable,
+        forPeer peer: PeerID
+    ) async throws {
+        try await self.add(metaKey: .Prunable, value: MetadataBook.PrunableMetadata(prunable: prunable), toPeer: peer)
+    }
+
+    public func getPrunability(forPeer peer: PeerID) async throws -> MetadataBook.PrunableMetadata.Prunable {
+        try await self.getPrunability(forPeer: peer, on: nil).get()
+    }
+
+    public func setLatency(_ latency: MetadataBook.LatencyMetadata, forPeer peer: PeerID) async throws {
+        try await self.add(metaKey: .Latency, value: latency, toPeer: peer)
+    }
+
+    public func getLatency(forPeer peer: PeerID) async throws -> MetadataBook.LatencyMetadata? {
+        try await self.getLatency(forPeer: peer, on: nil).get()
+    }
+
+    public func setAgentVersion(_ version: String, forPeer peer: PeerID) async throws {
+        try await self.setAgentVersion(version, forPeer: peer, on: nil).get()
+    }
+
+    public func getAgentVersion(forPeer peer: PeerID) async throws -> String? {
+        try await self.getAgentVersion(forPeer: peer, on: nil).get()
+    }
+
+    public func setProtocolVersion(_ version: String, forPeer peer: PeerID) async throws {
+        try await self.setProtocolVersion(version, forPeer: peer, on: nil).get()
+    }
+
+    public func getProtocolVersion(forPeer peer: PeerID) async throws -> String? {
+        try await self.getProtocolVersion(forPeer: peer, on: nil).get()
+    }
+
+    public func setObservedAddress(_ address: Multiaddr, forPeer peer: PeerID) async throws {
+        try await self.setObservedAddress(address, forPeer: peer, on: nil).get()
+    }
+
+    public func getObservedAddress(forPeer peer: PeerID) async throws -> Multiaddr? {
+        try await self.getObservedAddress(forPeer: peer, on: nil).get()
     }
 }
 
