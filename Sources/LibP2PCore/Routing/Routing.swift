@@ -49,10 +49,10 @@ public protocol PeerRouting {
 /// ValueStore is a basic Put/Get interface.
 public protocol ValueStore {
     /// putValue adds value corresponding to given Key.
-    func putValue(key: String, value: [UInt8], options: Any...) -> EventLoopFuture<Void>
+    func putValue(key: String, value: [UInt8], options: [Any]) -> EventLoopFuture<Void>
 
     /// getValue searches for the value corresponding to the given key
-    func getValue(key: String, options: Any...) -> EventLoopFuture<[UInt8]>
+    func getValue(key: String, options: [Any]) -> EventLoopFuture<[UInt8]>
 
     /// SearchValue searches for better and better values from this value store corresponding to the given Key.
     ///
@@ -67,7 +67,24 @@ public protocol ValueStore {
     ///
     /// - TODO: Not entirely sure if the escaping callback with a final eventloopfuture is the correct way to go about this.
     /// We want to simulate Combine's publish subcribe model, where we can listen for multiple events before the channel is closed.
-    func searchValue(key: String, onValue: @escaping ([UInt8]) -> Void, options: Any...) -> EventLoopFuture<[UInt8]>
+    func searchValue(key: String, onValue: @escaping ([UInt8]) -> Void, options: [Any]) -> EventLoopFuture<[UInt8]>
+}
+
+extension ValueStore {
+    /// putValue adds value corresponding to given Key.
+    public func putValue(key: String, value: [UInt8]) -> EventLoopFuture<Void> {
+        self.putValue(key: key, value: value, options: [])
+    }
+
+    /// getValue searches for the value corresponding to the given key.
+    public func getValue(key: String) -> EventLoopFuture<[UInt8]> {
+        self.getValue(key: key, options: [])
+    }
+
+    /// SearchValue searches for better and better values from this value store corresponding to the given Key.
+    public func searchValue(key: String, onValue: @escaping ([UInt8]) -> Void) -> EventLoopFuture<[UInt8]> {
+        self.searchValue(key: key, onValue: onValue, options: [])
+    }
 }
 
 public protocol Routing: ContentRouting, PeerRouting, ValueStore {
@@ -126,16 +143,26 @@ extension PeerRouting {
 }
 
 extension ValueStore {
-    /// - Note: The variadic `options` supported by the `EventLoopFuture` variant are omitted here;
-    ///   structured routing options are a planned follow-up.
-    public func putValue(key: String, value: [UInt8]) async throws {
-        try await self.putValue(key: key, value: value).get()
+    /// putValue adds the value under the given Key.
+    public func putValue(key: String, value: [UInt8], options: [Any] = []) async throws {
+        try await self.putValue(key: key, value: value, options: options).get()
     }
 
-    /// - Note: The variadic `options` supported by the `EventLoopFuture` variant are omitted here;
-    ///   structured routing options are a planned follow-up.
-    public func getValue(key: String) async throws -> [UInt8] {
-        try await self.getValue(key: key).get()
+    /// getValue searches for the value corresponding to the given key.
+    public func getValue(key: String, options: [Any] = []) async throws -> [UInt8] {
+        try await self.getValue(key: key, options: options).get()
+    }
+
+    /// SearchValue searches for better values from this value store corresponding to the given Key.
+    ///
+    /// `onValue` is invoked for each intermediate value discovered, the returned value is the
+    /// final, best value (the one `getValue` would return).
+    public func searchValue(
+        key: String,
+        onValue: @escaping ([UInt8]) -> Void,
+        options: [Any] = []
+    ) async throws -> [UInt8] {
+        try await self.searchValue(key: key, onValue: onValue, options: options).get()
     }
 }
 
