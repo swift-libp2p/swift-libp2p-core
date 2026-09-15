@@ -218,7 +218,7 @@ public enum PubSub {
                     (self.outbound?.close(gracefully: true) ?? on.makeSucceededVoidFuture()),
                 ],
                 on: on
-            ).map { _ in print("Closed Subscriber<\(id)> Streams") }
+            ).map { _ in }
         }
 
         public mutating func attachInbound(stream: Stream) {
