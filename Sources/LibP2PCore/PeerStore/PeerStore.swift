@@ -388,24 +388,21 @@ public protocol RecordRepository {
     func removeRecords(forPeer peer: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
 }
 
-// - IMPORTANT: These `EventLoop? = nil` default overloads can cause infinite
-//   recursion if the protocol conformer doesn't implement the methods. We need
-//   fix this.
 extension RecordRepository {
-    public func add(record: PeerRecord, on: EventLoop? = nil) -> EventLoopFuture<Void> {
-        add(record: record, on: on)
+    public func add(record: PeerRecord) -> EventLoopFuture<Void> {
+        add(record: record, on: nil)
     }
-    public func getRecords(forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<[PeerRecord]> {
-        getRecords(forPeer: peer, on: on)
+    public func getRecords(forPeer peer: PeerID) -> EventLoopFuture<[PeerRecord]> {
+        getRecords(forPeer: peer, on: nil)
     }
-    public func getMostRecentRecord(forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<PeerRecord?> {
-        getMostRecentRecord(forPeer: peer, on: on)
+    public func getMostRecentRecord(forPeer peer: PeerID) -> EventLoopFuture<PeerRecord?> {
+        getMostRecentRecord(forPeer: peer, on: nil)
     }
-    public func trimRecords(forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
-        trimRecords(forPeer: peer, on: on)
+    public func trimRecords(forPeer peer: PeerID) -> EventLoopFuture<Void> {
+        trimRecords(forPeer: peer, on: nil)
     }
-    public func removeRecords(forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
-        removeRecords(forPeer: peer, on: on)
+    public func removeRecords(forPeer peer: PeerID) -> EventLoopFuture<Void> {
+        removeRecords(forPeer: peer, on: nil)
     }
 }
 
@@ -417,17 +414,17 @@ public protocol KeyRepository {
 }
 
 extension KeyRepository {
-    public func removeAllKeys(on: EventLoop? = nil) -> EventLoopFuture<Void> {
-        removeAllKeys(on: on)
+    public func removeAllKeys() -> EventLoopFuture<Void> {
+        removeAllKeys(on: nil)
     }
-    public func add(key: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
-        add(key: key, on: on)
+    public func add(key: PeerID) -> EventLoopFuture<Void> {
+        add(key: key, on: nil)
     }
-    public func remove(key: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
-        remove(key: key, on: on)
+    public func remove(key: PeerID) -> EventLoopFuture<Void> {
+        remove(key: key, on: nil)
     }
-    public func getKey(forPeer: String, on: EventLoop? = nil) -> EventLoopFuture<PeerID> {
-        getKey(forPeer: forPeer, on: on)
+    public func getKey(forPeer: String) -> EventLoopFuture<PeerID> {
+        getKey(forPeer: forPeer, on: nil)
     }
 }
 
@@ -446,29 +443,29 @@ public protocol AddressRepository {
 }
 
 extension AddressRepository {
-    public func add(address: Multiaddr, toPeer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
-        add(address: address, toPeer: toPeer, on: on)
+    public func add(address: Multiaddr, toPeer: PeerID) -> EventLoopFuture<Void> {
+        add(address: address, toPeer: toPeer, on: nil)
     }
-    public func add(addresses: [Multiaddr], toPeer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
-        add(addresses: addresses, toPeer: toPeer, on: on)
+    public func add(addresses: [Multiaddr], toPeer: PeerID) -> EventLoopFuture<Void> {
+        add(addresses: addresses, toPeer: toPeer, on: nil)
     }
-    public func remove(address: Multiaddr, fromPeer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
-        remove(address: address, fromPeer: fromPeer, on: on)
+    public func remove(address: Multiaddr, fromPeer: PeerID) -> EventLoopFuture<Void> {
+        remove(address: address, fromPeer: fromPeer, on: nil)
     }
-    public func removeAllAddresses(forPeer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
-        removeAllAddresses(forPeer: forPeer, on: on)
+    public func removeAllAddresses(forPeer: PeerID) -> EventLoopFuture<Void> {
+        removeAllAddresses(forPeer: forPeer, on: nil)
     }
-    public func getAddresses(forPeer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<[Multiaddr]> {
-        getAddresses(forPeer: forPeer, on: on)
+    public func getAddresses(forPeer: PeerID) -> EventLoopFuture<[Multiaddr]> {
+        getAddresses(forPeer: forPeer, on: nil)
     }
-    public func getPeer(byAddress: Multiaddr, on: EventLoop? = nil) -> EventLoopFuture<String> {
-        getPeer(byAddress: byAddress, on: on)
+    public func getPeer(byAddress: Multiaddr) -> EventLoopFuture<String> {
+        getPeer(byAddress: byAddress, on: nil)
     }
-    public func getPeerID(byAddress address: Multiaddr, on: EventLoop? = nil) -> EventLoopFuture<PeerID> {
-        getPeerID(byAddress: address, on: on)
+    public func getPeerID(byAddress address: Multiaddr) -> EventLoopFuture<PeerID> {
+        getPeerID(byAddress: address, on: nil)
     }
-    public func getPeerInfo(byAddress address: Multiaddr, on: EventLoop? = nil) -> EventLoopFuture<PeerInfo> {
-        getPeerInfo(byAddress: address, on: on)
+    public func getPeerInfo(byAddress address: Multiaddr) -> EventLoopFuture<PeerInfo> {
+        getPeerInfo(byAddress: address, on: nil)
     }
 }
 
@@ -483,26 +480,26 @@ public protocol ProtocolRepository {
 }
 
 extension ProtocolRepository {
-    public func removeAllProtocols(forPeer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
-        removeAllProtocols(forPeer: forPeer, on: on)
+    public func removeAllProtocols(forPeer: PeerID) -> EventLoopFuture<Void> {
+        removeAllProtocols(forPeer: forPeer, on: nil)
     }
-    public func add(protocol: SemVerProtocol, toPeer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
-        add(protocol: `protocol`, toPeer: toPeer, on: on)
+    public func add(protocol proto: SemVerProtocol, toPeer: PeerID) -> EventLoopFuture<Void> {
+        add(protocol: proto, toPeer: toPeer, on: nil)
     }
-    public func add(protocols: [SemVerProtocol], toPeer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
-        add(protocols: protocols, toPeer: toPeer, on: on)
+    public func add(protocols: [SemVerProtocol], toPeer: PeerID) -> EventLoopFuture<Void> {
+        add(protocols: protocols, toPeer: toPeer, on: nil)
     }
-    public func remove(protocol: SemVerProtocol, fromPeer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
-        remove(protocol: `protocol`, fromPeer: fromPeer, on: on)
+    public func remove(protocol proto: SemVerProtocol, fromPeer: PeerID) -> EventLoopFuture<Void> {
+        remove(protocol: proto, fromPeer: fromPeer, on: nil)
     }
-    public func remove(protocols: [SemVerProtocol], fromPeer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
-        remove(protocols: protocols, fromPeer: fromPeer, on: on)
+    public func remove(protocols: [SemVerProtocol], fromPeer: PeerID) -> EventLoopFuture<Void> {
+        remove(protocols: protocols, fromPeer: fromPeer, on: nil)
     }
-    public func getProtocols(forPeer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<[SemVerProtocol]> {
-        getProtocols(forPeer: forPeer, on: on)
+    public func getProtocols(forPeer: PeerID) -> EventLoopFuture<[SemVerProtocol]> {
+        getProtocols(forPeer: forPeer, on: nil)
     }
-    public func getPeers(supportingProtocol: SemVerProtocol, on: EventLoop? = nil) -> EventLoopFuture<[String]> {
-        getPeers(supportingProtocol: supportingProtocol, on: on)
+    public func getPeers(supportingProtocol: SemVerProtocol) -> EventLoopFuture<[String]> {
+        getPeers(supportingProtocol: supportingProtocol, on: nil)
     }
 }
 
@@ -596,28 +593,35 @@ public protocol MetadataRepository {
 }
 
 extension MetadataRepository {
-    public func removeAllMetadata(forPeer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
-        removeAllMetadata(forPeer: forPeer, on: on)
+    public func removeAllMetadata(forPeer: PeerID) -> EventLoopFuture<Void> {
+        removeAllMetadata(forPeer: forPeer, on: nil)
     }
-    public func add(metaKey: String, data: [UInt8], toPeer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
-        add(metaKey: metaKey, data: data, toPeer: toPeer, on: on)
+    public func add(metaKey: String, data: [UInt8], toPeer: PeerID) -> EventLoopFuture<Void> {
+        add(metaKey: metaKey, data: data, toPeer: toPeer, on: nil)
     }
+    /// Default implementation of the typed-key requirement, forwarding to the raw-key variant.
     public func add(
         metaKey: MetadataBook.Keys,
         data: [UInt8],
         toPeer: PeerID,
-        on: EventLoop? = nil
+        on: EventLoop?
     ) -> EventLoopFuture<Void> {
         add(metaKey: metaKey.rawValue, data: data, toPeer: toPeer, on: on)
     }
-    public func remove(metaKey: String, fromPeer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
-        remove(metaKey: metaKey, fromPeer: fromPeer, on: on)
+    public func add(metaKey: MetadataBook.Keys, data: [UInt8], toPeer: PeerID) -> EventLoopFuture<Void> {
+        add(metaKey: metaKey.rawValue, data: data, toPeer: toPeer, on: nil)
     }
-    public func remove(metaKey: MetadataBook.Keys, fromPeer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
+    public func remove(metaKey: String, fromPeer: PeerID) -> EventLoopFuture<Void> {
+        remove(metaKey: metaKey, fromPeer: fromPeer, on: nil)
+    }
+    public func remove(metaKey: MetadataBook.Keys, fromPeer: PeerID, on: EventLoop?) -> EventLoopFuture<Void> {
         remove(metaKey: metaKey.rawValue, fromPeer: fromPeer, on: on)
     }
-    public func getMetadata(forPeer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Metadata> {
-        getMetadata(forPeer: forPeer, on: on)
+    public func remove(metaKey: MetadataBook.Keys, fromPeer: PeerID) -> EventLoopFuture<Void> {
+        remove(metaKey: metaKey.rawValue, fromPeer: fromPeer, on: nil)
+    }
+    public func getMetadata(forPeer: PeerID) -> EventLoopFuture<Metadata> {
+        getMetadata(forPeer: forPeer, on: nil)
     }
 }
 
