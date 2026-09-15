@@ -57,16 +57,28 @@ extension Muxer {
 
 public struct MuxerConfig {
     ///  A function called when receiving a new stream from the remote
-    let onStream: ((Stream) -> Void)?
+    public let onStream: ((Stream) -> Void)?
 
     /// A function called when a stream ends.
-    let onStreamEnd: ((Stream) -> Void)?
+    public let onStreamEnd: ((Stream) -> Void)?
 
     /// An `AbortSignal` which can be used to abort the muxer, including all of it's multiplexed connections.
-    let signal: (() -> Void)?
+    public let signal: (() -> Void)?
 
     /// The maximum size in bytes the data field of multiplexed messages may contain (default 1MB)
-    let maxMessageSize: Int
+    public let maxMessageSize: Int
+
+    public init(
+        onStream: ((Stream) -> Void)? = nil,
+        onStreamEnd: ((Stream) -> Void)? = nil,
+        signal: (() -> Void)? = nil,
+        maxMessageSize: Int = 1_048_576
+    ) {
+        self.onStream = onStream
+        self.onStreamEnd = onStreamEnd
+        self.signal = signal
+        self.maxMessageSize = maxMessageSize
+    }
 }
 
 public protocol MuxerProtocolInstaller {
