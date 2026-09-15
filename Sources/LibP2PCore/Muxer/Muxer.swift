@@ -33,9 +33,6 @@ public protocol Muxer: AnyObject {
     /// Initiate a new stream with the remote. Returns a duplex stream.
     func newStream(channel: Channel, proto: ProtocolRegistration) throws -> EventLoopFuture<_Stream>
 
-    /// Takes an uninitialized Stream from our Connection object and attempts to open the Stream with the Remote Peer.
-    func openStream(_ stream: inout Stream) throws -> EventLoopFuture<Void>
-
     /// The streams property returns an array of streams the muxer currently has open. Closed streams will not be returned.
     var streams: [Stream] { get }
 
