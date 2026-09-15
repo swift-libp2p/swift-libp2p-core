@@ -14,18 +14,26 @@
 
 import NIOCore
 
-/// - TODO: Remove Optional Return Value
+public enum ConnectionManagerError: Error, Sendable {
+    /// There is no existing connection to the requested peer.
+    case noConnectionToPeer
+}
+
 public protocol ConnectionManager: Sendable {
     func getConnections(on: EventLoop?) -> EventLoopFuture<[Connection]>
     func getConnectionsToPeer(peer: PeerID, on: EventLoop?) -> EventLoopFuture<[Connection]>
-    func getBestConnectionForPeer(peer: PeerID, on: EventLoop?) -> EventLoopFuture<Connection?>
+    /// The best existing connection to the specified peer.
+    ///
+    /// - Note: Fails with ``ConnectionManagerError/noConnectionToPeer`` when no connection to the
+    ///   peer exists.
+    func getBestConnectionForPeer(peer: PeerID, on: EventLoop?) -> EventLoopFuture<Connection>
     func connectedness(peer: PeerID, on: EventLoop?) -> EventLoopFuture<Connectedness>
     /// Does this need a toPeer
-    func addConnection(_: Connection, on: EventLoop?) -> EventLoopFuture<Void>
+    func addConnection(_ connection: Connection, on: EventLoop?) -> EventLoopFuture<Void>
     //func addConnection(_:Connection, toPeer:PeerID, on:EventLoop) -> EventLoopFuture<Void>
     func closeConnectionsToPeer(peer: PeerID, on: EventLoop?) -> EventLoopFuture<Bool>
 
-    func getConnectionsTo(_: Multiaddr, onlyMuxed: Bool, on: EventLoop?) -> EventLoopFuture<[Connection]>
+    func getConnectionsTo(_ address: Multiaddr, onlyMuxed: Bool, on: EventLoop?) -> EventLoopFuture<[Connection]>
     func closeAllConnections() -> EventLoopFuture<Void>
 
     //    func onNewInboundChannel(channel:Channel) -> EventLoopFuture<Void>
@@ -35,10 +43,14 @@ public protocol ConnectionManager: Sendable {
     func dumpConnectionHistory()
 
     /// Update the maximum simultaneuous Connections allowed
-    func setMaxConnections(_: Int)
+    func setMaxConnections(_ maxConnections: Int)
 
     /// Sets the Idle Timeout for Connections with zero streams
-    func setIdleTimeout(_: TimeAmount)
+    func setIdleTimeout(_ timeout: TimeAmount)
+}
+
+extension ConnectionManager {
+    public func dumpConnectionHistory() {}
 }
 
 /// Peer Connectedness
@@ -64,7 +76,7 @@ extension ConnectionManager {
         try await self.getConnectionsToPeer(peer: peer, on: nil).get()
     }
 
-    public func getBestConnectionForPeer(peer: PeerID) async throws -> Connection? {
+    public func getBestConnectionForPeer(peer: PeerID) async throws -> Connection {
         try await self.getBestConnectionForPeer(peer: peer, on: nil).get()
     }
 

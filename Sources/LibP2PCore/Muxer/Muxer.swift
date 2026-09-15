@@ -33,9 +33,6 @@ public protocol Muxer: AnyObject {
     /// Initiate a new stream with the remote. Returns a duplex stream.
     func newStream(channel: Channel, proto: ProtocolRegistration) throws -> EventLoopFuture<_Stream>
 
-    /// Takes an uninitialized Stream from our Connection object and attempts to open the Stream with the Remote Peer.
-    func openStream(_ stream: inout Stream) throws -> EventLoopFuture<Void>
-
     /// The streams property returns an array of streams the muxer currently has open. Closed streams will not be returned.
     var streams: [Stream] { get }
 
@@ -60,16 +57,28 @@ extension Muxer {
 
 public struct MuxerConfig {
     ///  A function called when receiving a new stream from the remote
-    let onStream: ((Stream) -> Void)?
+    public let onStream: ((Stream) -> Void)?
 
     /// A function called when a stream ends.
-    let onStreamEnd: ((Stream) -> Void)?
+    public let onStreamEnd: ((Stream) -> Void)?
 
     /// An `AbortSignal` which can be used to abort the muxer, including all of it's multiplexed connections.
-    let signal: (() -> Void)?
+    public let signal: (() -> Void)?
 
     /// The maximum size in bytes the data field of multiplexed messages may contain (default 1MB)
-    let maxMessageSize: Int
+    public let maxMessageSize: Int
+
+    public init(
+        onStream: ((Stream) -> Void)? = nil,
+        onStreamEnd: ((Stream) -> Void)? = nil,
+        signal: (() -> Void)? = nil,
+        maxMessageSize: Int = 1_048_576
+    ) {
+        self.onStream = onStream
+        self.onStreamEnd = onStreamEnd
+        self.signal = signal
+        self.maxMessageSize = maxMessageSize
+    }
 }
 
 public protocol MuxerProtocolInstaller {

@@ -59,6 +59,11 @@ extension Options {
 public struct StandardOptions: Options {
     public var ttl: TimeAmount
     public var limit: Int
+
+    public init(ttl: TimeAmount, limit: Int) {
+        self.ttl = ttl
+        self.limit = limit
+    }
 }
 
 public struct DiscoverdPeers: Sendable {

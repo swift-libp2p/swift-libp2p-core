@@ -32,13 +32,29 @@ public protocol SemanticVersion: Sendable {
 }
 
 public struct ProtocolRegistration {
-    let proto: SemVerProtocol
-    let middleware: [ChannelHandler]
-    let transports: [Transport]
-    let finalHandler: ProtocolRouteHandler
-    let tempHandler: ProtocolHandler
+    public let proto: SemVerProtocol
+    public let middleware: [ChannelHandler]
+    public let transports: [Transport]
+    public let finalHandler: ProtocolRouteHandler
+    public let tempHandler: ProtocolHandler
 
-    func availableForTransport(_ t: Transport) -> Bool {
+    public init(
+        proto: SemVerProtocol,
+        middleware: [ChannelHandler] = [],
+        transports: [Transport] = [],
+        finalHandler: ProtocolRouteHandler,
+        tempHandler: ProtocolHandler
+    ) {
+        self.proto = proto
+        self.middleware = middleware
+        self.transports = transports
+        self.finalHandler = finalHandler
+        self.tempHandler = tempHandler
+    }
+
+    /// Whether this registration is available on transport `t`. An empty `transports`
+    /// list means the registration is available on every transport.
+    public func availableForTransport(_ t: Transport) -> Bool {
         if transports.isEmpty { return true }
         return transports.contains(where: { $0.description == t.description })
     }
@@ -60,8 +76,11 @@ public final class ProtocolRouteHandler: ChannelInboundHandler {
     public typealias InboundIn = ByteBuffer
     public typealias OutboundOut = ByteBuffer
 
+    public init() {}
+
     public func channelRead(context: ChannelHandlerContext, data: NIOAny) {
-        print("TODO::Implement me...")
+        // TODO: Implement me
+        context.fireChannelRead(data)
     }
 }
 
@@ -146,9 +165,9 @@ public struct SemVerProtocol: Equatable, Hashable, Sendable {
     }
 
     /// The protocols name (ex: plaintext)
-    let proto: String
+    public let proto: String
     /// The protocols version (ex: 2.0.0)
-    let version: SemVersion?
+    public let version: SemVersion?
 
     /// Instantiates a SemVerProtocol matching the exact version specified
     public init(proto: String, version: ProtocolVersion?) {
@@ -178,7 +197,6 @@ public struct SemVerProtocol: Equatable, Hashable, Sendable {
             // We have a version
             let numbers = last.split(separator: ".").compactMap { Int($0) }
             guard numbers.count == 3 else {
-                print("Failed to parse Version from proto string '\(string)'")
                 return nil
             }
             semVer = ProtocolVersion(major: numbers[0], minor: numbers[1], patch: numbers[2])

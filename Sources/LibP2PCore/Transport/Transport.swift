@@ -80,24 +80,11 @@ public protocol Transport: CustomStringConvertible, Sendable {
     /// out addresses that we can't dial.
     func canDial(address: Multiaddr) -> Bool
 
-    /// Listen listens on the passed multiaddr.
-    func listen(address: Multiaddr) -> EventLoopFuture<Listener>
-
     /// Protocol returns the set of protocols handled by this transport.
     var protocols: [LibP2PProtocol] { get }
 
     /// returns true if this is a proxy transport
     var proxy: Bool { get }
-}
-
-/// Listener is an interface closely resembling the net.Listener interface.
-///
-/// - Note: The only real difference is that `accept()` returns Connections of the type in this package, and also exposes a Multiaddr method as opposed to a regular Addr method
-public protocol Listener {
-    func accept() -> EventLoopFuture<Connection>
-    func close() -> EventLoopFuture<Void>
-
-    var address: Multiaddr { get }
 }
 
 /// TransportNetwork is an inet.Network with methods for managing transports.
@@ -136,20 +123,6 @@ extension Transport {
 extension Transport {
     public func dial(address: Multiaddr) async throws -> Connection {
         try await self.dial(address: address).get()
-    }
-
-    public func listen(address: Multiaddr) async throws -> Listener {
-        try await self.listen(address: address).get()
-    }
-}
-
-extension Listener {
-    public func accept() async throws -> Connection {
-        try await self.accept().get()
-    }
-
-    public func close() async throws {
-        try await self.close().get()
     }
 }
 

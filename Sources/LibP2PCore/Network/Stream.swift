@@ -44,11 +44,17 @@ public protocol Stream: AnyObject, Sendable {
         streamState: LibP2PCore.StreamState
     )
 
-    /// Writes data to the remote peer
-    //func write(_ data:Data) -> EventLoopFuture<Void>
     /// Writes bytes to the remote peer
+    ///
+    /// - Important: The returned future MUST be completed. Either succeeded once the bytes have
+    ///   been written to the transport, or failed if the write cannot be performed. Implementations must
+    ///   never drop the promise.
     func write(_ bytes: [UInt8]) -> EventLoopFuture<Void>
     /// Writes bytes to the remote peer
+    ///
+    /// - Important: The returned future MUST be completed. Either succeeded once the bytes have
+    ///   been written to the transport, or failed if the write cannot be performed. Implementations must
+    ///   never drop the promise.
     func write(_ buffer: ByteBuffer) -> EventLoopFuture<Void>
 
     /// A method that gets called when Stream Events are triggered
@@ -66,7 +72,7 @@ public protocol Stream: AnyObject, Sendable {
 }
 
 extension Stream {
-    func close() -> EventLoopFuture<Void> {
+    public func close() -> EventLoopFuture<Void> {
         self.close(gracefully: true)
     }
 
@@ -101,33 +107,33 @@ public final class StreamHandler {
 
     /// The underlying connection this stream belongs to
     /// - Important: This must be a weakly held reference to our parent Connection
-    var connection: Connection? {
+    public var connection: Connection? {
         _connection
     }
 
-    var channel: Channel? {
+    public var channel: Channel? {
         _connection?.channel
     }
 
     /// The non-unique ID of this stream
-    var id: UInt64? {
+    public var id: UInt64? {
         _stream?.id
     }
     /// The name of this stream
-    var name: String? {
+    public var name: String? {
         _stream?.name
     }
     /// The state of this stream (usually either active or closed)
-    var streamState: LibP2PCore.StreamState {
+    public var streamState: LibP2PCore.StreamState {
         _stream?.streamState ?? .initialized
     }
     /// The protocol codec this stream is registered to (every stream must be bound to a single protocol codec, ex: 'echo/1.0.0')
-    let protocolCodec: String
+    public let protocolCodec: String
 
     /// A method that gets called when Stream Events are triggered
-    var on: ((LibP2PCore.StreamEvent) -> EventLoopFuture<Void>)?
+    public var on: ((LibP2PCore.StreamEvent) -> EventLoopFuture<Void>)?
 
-    init(protocolCodec: String) {
+    public init(protocolCodec: String) {
         self.protocolCodec = protocolCodec
     }
 
@@ -155,7 +161,7 @@ public final class StreamHandler {
     //    }
 
     /// Writes bytes to the remote peer
-    func write(_ bytes: [UInt8], promise: EventLoopPromise<Void>? = nil) {
+    public func write(_ bytes: [UInt8], promise: EventLoopPromise<Void>? = nil) {
         guard let s = _stream else {
             promise?.fail(Errors.streamNotAvailable)
             return
@@ -168,7 +174,7 @@ public final class StreamHandler {
     }
 
     /// Writes bytes to the remote peer
-    func write(_ buffer: ByteBuffer, promise: EventLoopPromise<Void>? = nil) {
+    public func write(_ buffer: ByteBuffer, promise: EventLoopPromise<Void>? = nil) {
         guard let s = _stream else {
             promise?.fail(Errors.streamNotAvailable)
             return
@@ -181,7 +187,7 @@ public final class StreamHandler {
     }
 
     /// Requests the Stream be closed on our end
-    func close(gracefully: Bool = true, promise: EventLoopPromise<Void>? = nil) {
+    public func close(gracefully: Bool = true, promise: EventLoopPromise<Void>? = nil) {
         guard let s = _stream else {
             promise?.fail(Errors.streamNotAvailable)
             return
@@ -194,7 +200,7 @@ public final class StreamHandler {
     }
 
     /// Requests that the Stream be reset immediately
-    func reset(promise: EventLoopPromise<Void>? = nil) {
+    public func reset(promise: EventLoopPromise<Void>? = nil) {
         guard let s = _stream else {
             promise?.fail(Errors.streamNotAvailable)
             return
@@ -207,7 +213,7 @@ public final class StreamHandler {
     }
 
     /// Called to actually dial the peer once configured
-    func resume(promise: EventLoopPromise<Void>? = nil) {
+    public func resume(promise: EventLoopPromise<Void>? = nil) {
         guard let s = _stream else {
             promise?.fail(Errors.streamNotAvailable)
             return

@@ -35,11 +35,16 @@ public enum AddressAction: Sendable {
 public struct UpdatedAddresses: Sendable {
 
     /// Address contains the address that was updated.
-    let address: Multiaddr
+    public let address: Multiaddr
 
     /// Action indicates what action was taken on the address during the event.
     /// May be Unknown if the event producer cannot produce diffs.
-    let action: AddressAction
+    public let action: AddressAction
+
+    public init(address: Multiaddr, action: AddressAction) {
+        self.address = address
+        self.action = action
+    }
 }
 
 /// EvtLocalAddressesUpdated should be emitted when the set of listen addresses for
@@ -69,19 +74,26 @@ public struct UpdatedAddresses: Sendable {
 public struct LocalAddressesUpdated: Event, Sendable {
 
     /// Diffs indicates whether this event contains a diff of the Host's previous address set.
-    let diffs: Bool
+    public let diffs: Bool
 
     /// Current contains all current listen addresses for the Host.
     /// If Diffs == true, the Action field of each UpdatedAddress will tell
     /// you whether an address was Added, or was Maintained from the previous
     /// state.
-    let current: [UpdatedAddresses]
+    public let current: [UpdatedAddresses]
 
     /// Removed contains addresses that were removed from the Host.
     /// This field is only set when Diffs == true.
-    let removed: [UpdatedAddresses]
+    public let removed: [UpdatedAddresses]
 
     /// SignedPeerRecord contains our own updated peer.PeerRecord, listing the addresses enumerated in Current.
     /// wrapped in a record.Envelope and signed by the Host's private key.
-    let signedPeerRecord: Envelope
+    public let signedPeerRecord: Envelope
+
+    public init(diffs: Bool, current: [UpdatedAddresses], removed: [UpdatedAddresses], signedPeerRecord: Envelope) {
+        self.diffs = diffs
+        self.current = current
+        self.removed = removed
+        self.signedPeerRecord = signedPeerRecord
+    }
 }

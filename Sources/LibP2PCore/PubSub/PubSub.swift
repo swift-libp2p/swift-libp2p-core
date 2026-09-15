@@ -218,7 +218,7 @@ public enum PubSub {
                     (self.outbound?.close(gracefully: true) ?? on.makeSucceededVoidFuture()),
                 ],
                 on: on
-            ).map { _ in print("Closed Subscriber<\(id)> Streams") }
+            ).map { _ in }
         }
 
         public mutating func attachInbound(stream: Stream) {
@@ -329,7 +329,7 @@ public protocol PubSubCore: EventLoopService, AnyObject, Sendable {
 
 public protocol PeerConnectionDelegate {
     func onPeerConnected(peerID: PeerID, stream: Stream) -> EventLoopFuture<Void>
-    func onPeerDisconnected(_: PeerID) -> EventLoopFuture<Void>
+    func onPeerDisconnected(_ peer: PeerID) -> EventLoopFuture<Void>
 }
 
 /// Use these protocols to abstract away the specifics for both PeerState and MessageCache

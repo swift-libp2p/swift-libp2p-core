@@ -75,8 +75,7 @@ extension SecurityProtocolInstaller {
         at position: ChannelPipeline.Position,
         peerID: PeerID,
         mode: LibP2PCore.Mode,
-        secured: EventLoopPromise<(Bool, PeerID?)>,
-        expectedRemotePeerID: String? = nil
+        secured: EventLoopPromise<(Bool, PeerID?)>
     ) -> EventLoopFuture<Void> {
         self.installHandlers(
             on: ctx,
@@ -84,7 +83,7 @@ extension SecurityProtocolInstaller {
             peerID: peerID,
             mode: mode,
             secured: secured,
-            expectedRemotePeerID: expectedRemotePeerID
+            expectedRemotePeerID: nil
         )
     }
 }
