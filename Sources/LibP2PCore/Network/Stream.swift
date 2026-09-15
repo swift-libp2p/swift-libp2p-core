@@ -44,11 +44,17 @@ public protocol Stream: AnyObject, Sendable {
         streamState: LibP2PCore.StreamState
     )
 
-    /// Writes data to the remote peer
-    //func write(_ data:Data) -> EventLoopFuture<Void>
     /// Writes bytes to the remote peer
+    ///
+    /// - Important: The returned future MUST be completed. Either succeeded once the bytes have
+    ///   been written to the transport, or failed if the write cannot be performed. Implementations must
+    ///   never drop the promise.
     func write(_ bytes: [UInt8]) -> EventLoopFuture<Void>
     /// Writes bytes to the remote peer
+    ///
+    /// - Important: The returned future MUST be completed. Either succeeded once the bytes have
+    ///   been written to the transport, or failed if the write cannot be performed. Implementations must
+    ///   never drop the promise.
     func write(_ buffer: ByteBuffer) -> EventLoopFuture<Void>
 
     /// A method that gets called when Stream Events are triggered
