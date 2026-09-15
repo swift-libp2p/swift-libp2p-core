@@ -35,11 +35,16 @@ public enum AddressAction: Sendable {
 public struct UpdatedAddresses: Sendable {
 
     /// Address contains the address that was updated.
-    let address: Multiaddr
+    public let address: Multiaddr
 
     /// Action indicates what action was taken on the address during the event.
     /// May be Unknown if the event producer cannot produce diffs.
-    let action: AddressAction
+    public let action: AddressAction
+
+    public init(address: Multiaddr, action: AddressAction) {
+        self.address = address
+        self.action = action
+    }
 }
 
 /// EvtLocalAddressesUpdated should be emitted when the set of listen addresses for
