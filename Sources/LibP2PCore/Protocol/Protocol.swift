@@ -32,13 +32,29 @@ public protocol SemanticVersion: Sendable {
 }
 
 public struct ProtocolRegistration {
-    let proto: SemVerProtocol
-    let middleware: [ChannelHandler]
-    let transports: [Transport]
-    let finalHandler: ProtocolRouteHandler
-    let tempHandler: ProtocolHandler
+    public let proto: SemVerProtocol
+    public let middleware: [ChannelHandler]
+    public let transports: [Transport]
+    public let finalHandler: ProtocolRouteHandler
+    public let tempHandler: ProtocolHandler
 
-    func availableForTransport(_ t: Transport) -> Bool {
+    public init(
+        proto: SemVerProtocol,
+        middleware: [ChannelHandler] = [],
+        transports: [Transport] = [],
+        finalHandler: ProtocolRouteHandler,
+        tempHandler: ProtocolHandler
+    ) {
+        self.proto = proto
+        self.middleware = middleware
+        self.transports = transports
+        self.finalHandler = finalHandler
+        self.tempHandler = tempHandler
+    }
+
+    /// Whether this registration is available on transport `t`. An empty `transports`
+    /// list means the registration is available on every transport.
+    public func availableForTransport(_ t: Transport) -> Bool {
         if transports.isEmpty { return true }
         return transports.contains(where: { $0.description == t.description })
     }
