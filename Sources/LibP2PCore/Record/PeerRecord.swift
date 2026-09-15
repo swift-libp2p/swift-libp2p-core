@@ -99,21 +99,31 @@ public final class PeerRecord: Record, Hashable, Sendable {
         try SealedEnvelope(record: self, signedWithKey: key)
     }
 
-    /// - NOTE: go-libp2p seems to be using these [0x03, 0x01] hardcoded bytes to prefix libp2p-peer-records.
-    /// When the Multicodec value for libp2p-peer-record is actually 0x0301 which when placed in a uVarInt buffer results in a multicodec prefix of [0x81, 0x06]
-    /// This also results in the Multicodec resolving to cidv3 instead of libp2p-peer-record during decoding.
-    /// I guess for now we just use the hardcoded values...
     public func unsignedPayload() throws -> [UInt8] {
-        uVarIntLengthPrefixed(domain.data(using: .utf8)!.byteArray)
-            + uVarIntLengthPrefixed([0x03, 0x01])
-            //+ uVarIntLengthPrefixed( Multicodec.getPrefix(multiCodec: PeerRecord.codec) )
-            + uVarIntLengthPrefixed(try self.marshal())
+        (domain.utf8).uVarIntLengthPrefixed
+        + self.codec.envelopePayloadType.uVarIntLengthPrefixed
+        + (try self.marshal()).uVarIntLengthPrefixed
     }
+}
 
-    private func uVarIntLengthPrefixed(_ bytes: [UInt8]) -> [UInt8] {
-        bytes.uVarIntLengthPrefixed
+extension Codecs {
+    /// The raw multicodec code as big-endian bytes (`0x0301` → `[0x03, 0x01]`).
+    ///
+    /// - NOTE: go-libp2p and js-libp2p use the codec's raw bytes, not its uVarInt
+    /// encoding (which for `libp2p_peer_record` would be `[0x81, 0x06]`), as an
+    /// Envelope's `payload_type`, so we do the same for interop. Decoding
+    /// `[0x03, 0x01]` as a uVarInt multicodec prefix resolves to `cidv3` instead of
+    /// `libp2p_peer_record`, which is why `SealedEnvelope` accepts both during
+    ///  verification.
+    public var envelopePayloadType: [UInt8] {
+        var value = self.rawValue
+        var bytes: [UInt8] = []
+        repeat {
+            bytes.insert(UInt8(truncatingIfNeeded: value), at: 0)
+            value >>= 8
+        } while value > 0
+        return bytes
     }
-
 }
 
 extension PeerRecord: CustomStringConvertible {

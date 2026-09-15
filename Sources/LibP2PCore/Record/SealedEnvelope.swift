@@ -49,7 +49,7 @@ public struct SealedEnvelope: Envelope, Sendable {
 
         self.pubKey = record.peerID
 
-        self.payloadType = [0x03, 0x01]  //record.codec.asVarInt
+        self.payloadType = record.codec.envelopePayloadType
 
         self.rawPayload = try record.marshal()
 
