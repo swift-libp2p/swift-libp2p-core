@@ -16,7 +16,7 @@ import Multiaddr
 import NIOCore
 import PeerID
 
-enum RoutingErrors: Error, Sendable {
+public enum RoutingErrors: Error, Sendable {
     /// ErrNotFound is returned when the router fails to find the requested record.
     case notFound
     /// ErrNotSupported is returned when the router doesn't support the given record type/operation.
@@ -81,35 +81,30 @@ public protocol PublicKeyFetcher {
 
 internal enum _Routing {
     static let PublicKeyNamespace = [UInt8]("/pk/".utf8)
-}
 
-//func keyForPublicKey(id: Peer) -> [UInt8] {
-//    _Routing.PublicKeyNamespace + id.ID
-//}
-func keyForPublicKey(id: PeerID) -> String {
-    "/pk/" + id.b58String
-}
-
-// TODO: This should not be in the global namespace
-
-func getPublicKey(_ store: ValueStore, peer: PeerID, on: EventLoop) -> EventLoopFuture<PeerID> {
-    /// If the PeerID has a public key, just return it
-    if peer.keyPair?.publicKey != nil {
-        return on.makeSucceededFuture(peer)
+    static func keyForPublicKey(id: PeerID) -> String {
+        "/pk/" + id.b58String
     }
 
-    /// If we have a DHT as our routing system, use optimized fetcher
-    if let dht = store as? PublicKeyFetcher {
-        return dht.getPublicKey(peerID: peer.cidString)
+    static func getPublicKey(_ store: ValueStore, peer: PeerID, on: EventLoop) -> EventLoopFuture<PeerID> {
+        /// If the PeerID has a public key, just return it
+        if peer.keyPair?.publicKey != nil {
+            return on.makeSucceededFuture(peer)
+        }
+
+        /// If we have a DHT as our routing system, use optimized fetcher
+        if let dht = store as? PublicKeyFetcher {
+            return dht.getPublicKey(peerID: peer.cidString)
+        }
+
+        /// TODO: Implement ValueStore protocol ...
+        return on.makeFailedFuture(RoutingErrors.notFound)
+
+        //let key = keyForPublicKey(id: peer)
+        //return store.getValue(key: key).flatMapThrowing { pkval -> PublicKey in
+        //    try PublicKey(fromMarshaledValue: pkval)
+        //}
     }
-
-    /// TODO: Implement ValueStore protocol ...
-    return on.makeFailedFuture(RoutingErrors.notFound)
-
-    //let key = keyForPublicKey(id: peer)
-    //return store.getValue(key: key).flatMapThrowing { pkval -> PublicKey in
-    //    try PublicKey(fromMarshaledValue: pkval)
-    //}
 }
 
 // MARK: - Async
