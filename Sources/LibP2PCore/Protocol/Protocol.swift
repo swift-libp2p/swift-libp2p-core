@@ -76,8 +76,11 @@ public final class ProtocolRouteHandler: ChannelInboundHandler {
     public typealias InboundIn = ByteBuffer
     public typealias OutboundOut = ByteBuffer
 
+    public init() {}
+
     public func channelRead(context: ChannelHandlerContext, data: NIOAny) {
-        print("TODO::Implement me...")
+        // TODO: Implement me
+        context.fireChannelRead(data)
     }
 }
 
