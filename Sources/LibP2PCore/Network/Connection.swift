@@ -142,8 +142,8 @@ extension Connection {
 
 public protocol ConnectionLifecycleDelegate: AnyObject {
     func onOpened() -> EventLoopFuture<Void>
-    func onSecured(sec: SecurityProtocolInstaller, remotePeerID: PeerID?) -> EventLoopFuture<Void>
-    func onMuxed(muxer: MuxerProtocolInstaller) -> EventLoopFuture<Void>
+    func onSecured(sec: Security, remotePeerID: PeerID?) -> EventLoopFuture<Void>
+    func onMuxed(muxer: Muxer) -> EventLoopFuture<Void>
     func onUpgraded() -> EventLoopFuture<Void>
     func onClosing() -> EventLoopFuture<Void>
     func onClosed() -> EventLoopFuture<Void>
@@ -337,11 +337,11 @@ extension ConnectionLifecycleDelegate {
         try await self.onOpened().get()
     }
 
-    public func onSecured(sec: SecurityProtocolInstaller, remotePeerID: PeerID?) async throws {
+    public func onSecured(sec: Security, remotePeerID: PeerID?) async throws {
         try await self.onSecured(sec: sec, remotePeerID: remotePeerID).get()
     }
 
-    public func onMuxed(muxer: MuxerProtocolInstaller) async throws {
+    public func onMuxed(muxer: Muxer) async throws {
         try await self.onMuxed(muxer: muxer).get()
     }
 
