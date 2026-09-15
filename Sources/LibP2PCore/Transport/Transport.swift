@@ -80,9 +80,6 @@ public protocol Transport: CustomStringConvertible, Sendable {
     /// out addresses that we can't dial.
     func canDial(address: Multiaddr) -> Bool
 
-    /// Listen listens on the passed multiaddr.
-    func listen(address: Multiaddr) -> EventLoopFuture<Listener>
-
     /// Protocol returns the set of protocols handled by this transport.
     var protocols: [LibP2PProtocol] { get }
 
