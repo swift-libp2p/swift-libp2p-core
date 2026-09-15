@@ -53,6 +53,7 @@ let package = Package(
             name: "LibP2PCore",
             dependencies: [
                 .product(name: "NIOCore", package: "swift-nio"),
+                .product(name: "NIOConcurrencyHelpers", package: "swift-nio"),
                 .product(name: "Logging", package: "swift-log"),
                 .product(name: "PeerID", package: "swift-peer-id"),
                 .product(name: "Multiaddr", package: "swift-multiaddr"),
