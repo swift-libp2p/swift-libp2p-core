@@ -29,11 +29,11 @@ public protocol ConnectionManager: Sendable {
     func getBestConnectionForPeer(peer: PeerID, on: EventLoop?) -> EventLoopFuture<Connection>
     func connectedness(peer: PeerID, on: EventLoop?) -> EventLoopFuture<Connectedness>
     /// Does this need a toPeer
-    func addConnection(_: Connection, on: EventLoop?) -> EventLoopFuture<Void>
+    func addConnection(_ connection: Connection, on: EventLoop?) -> EventLoopFuture<Void>
     //func addConnection(_:Connection, toPeer:PeerID, on:EventLoop) -> EventLoopFuture<Void>
     func closeConnectionsToPeer(peer: PeerID, on: EventLoop?) -> EventLoopFuture<Bool>
 
-    func getConnectionsTo(_: Multiaddr, onlyMuxed: Bool, on: EventLoop?) -> EventLoopFuture<[Connection]>
+    func getConnectionsTo(_ address: Multiaddr, onlyMuxed: Bool, on: EventLoop?) -> EventLoopFuture<[Connection]>
     func closeAllConnections() -> EventLoopFuture<Void>
 
     //    func onNewInboundChannel(channel:Channel) -> EventLoopFuture<Void>
@@ -43,10 +43,10 @@ public protocol ConnectionManager: Sendable {
     func dumpConnectionHistory()
 
     /// Update the maximum simultaneuous Connections allowed
-    func setMaxConnections(_: Int)
+    func setMaxConnections(_ maxConnections: Int)
 
     /// Sets the Idle Timeout for Connections with zero streams
-    func setIdleTimeout(_: TimeAmount)
+    func setIdleTimeout(_ timeout: TimeAmount)
 }
 
 extension ConnectionManager {
