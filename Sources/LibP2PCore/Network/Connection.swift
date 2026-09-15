@@ -61,9 +61,6 @@ public protocol Connection: AnyObject, Sendable {
     /// the metadata of the connection
     var stats: ConnectionStats { get }
 
-    /// an array of tags associated with the connection. New tags can be pushed to this array during the connection's lifetime
-    var tags: Any? { get }
-
     /// a map with the muxed streams indexed by their id. This registry contains the protocol used by the stream, as well as its metadata
     var registry: [UInt64: Stream] { get }
 
@@ -101,7 +98,6 @@ public protocol Connection: AnyObject, Sendable {
     func newStream(_ protos: [String]) -> EventLoopFuture<Stream>
     func newStreamSync(_ proto: String) throws -> Stream
     func newStreamHandlerSync(_ proto: String) throws -> StreamHandler
-    func newStream(forProtocol: String)
 
     /// Removes the stream with the given id from the connection registry.
     ///
