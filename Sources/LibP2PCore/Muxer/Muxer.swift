@@ -2,7 +2,7 @@
 //
 // This source file is part of the swift-libp2p open source project
 //
-// Copyright (c) 2022-2025 swift-libp2p project authors
+// Copyright (c) 2022-2026 swift-libp2p project authors
 // Licensed under MIT
 //
 // See LICENSE for license information
@@ -81,35 +81,6 @@ public struct MuxerConfig {
     }
 }
 
-public protocol MuxerProtocolInstaller {
-    var protocolName: String { get }
-    var protocolVersion: String { get }
-
-    var muxer: Muxer? { get }
-
-    //    func installHandlers(on ctx:ChannelHandlerContext, at position:ChannelPipeline.Position, localPeer:PeerID, mode:LibP2P.Mode, supportedProtocols:[LibP2P.ProtocolRegistration], upgraded:@escaping((Result<Bool, Error>) -> Void)) -> EventLoopFuture<Void>
-
-    func installHandlers(
-        on ctx: ChannelHandlerContext,
-        at position: ChannelPipeline.Position,
-        localPeer: PeerID,
-        mode: Mode,
-        supportedProtocols: [ProtocolRegistration],
-        upgraded: EventLoopPromise<Muxer>
-    ) -> EventLoopFuture<Void>
-
-    func protocolString() -> String
-
-    func destroySelf()
-}
-
-extension MuxerProtocolInstaller {
-    public func protocolString() -> String {
-        if protocolVersion.isEmpty { return protocolName }
-        return "/\(protocolName)/\(protocolVersion)"
-    }
-}
-
 // MARK: - Async
 
 extension Muxer {
@@ -127,28 +98,5 @@ extension Muxer {
 
     public func updateStream(channel: Channel, state: StreamState, proto: String) async throws {
         try await self.updateStream(channel: channel, state: state, proto: proto).get()
-    }
-}
-
-extension MuxerProtocolInstaller {
-    /// Installs the muxer handlers and awaits the upgraded `Muxer`.
-    public func installHandlers(
-        on ctx: ChannelHandlerContext,
-        at position: ChannelPipeline.Position,
-        localPeer: PeerID,
-        mode: Mode,
-        supportedProtocols: [ProtocolRegistration]
-    ) async throws -> Muxer {
-        let promise = ctx.eventLoop.makePromise(of: Muxer.self)
-        let upgraded = promise.futureResult
-        try await self.installHandlers(
-            on: ctx,
-            at: position,
-            localPeer: localPeer,
-            mode: mode,
-            supportedProtocols: supportedProtocols,
-            upgraded: promise
-        ).get()
-        return try await upgraded.get()
     }
 }
