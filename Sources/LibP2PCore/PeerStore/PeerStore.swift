@@ -245,9 +245,15 @@ public protocol PeerStore: KeyRepository, AddressRepository, ProtocolRepository,
     func count() -> EventLoopFuture<Int>
 
     /// Logs the specified peer to the console
+    ///
+    /// Debug utility: A default implementation is provided, conformers do not need to
+    /// implement this.
     func dump(peer: PeerID)
 
     /// Logs the entire PeerStore to the console
+    ///
+    /// Debug utility: A default implementation is provided, conformers do not need to
+    /// implement this.
     func dumpAll()
 
     /// Every `PeerID` currently held by the store.
@@ -269,6 +275,23 @@ public protocol PeerStore: KeyRepository, AddressRepository, ProtocolRepository,
 }
 
 extension PeerStore {
+
+    /// Logs the specified peer to the console once the lookup completes.
+    public func dump(peer: PeerID) {
+        self.all().whenSuccess { peers in
+            guard let match = peers.first(where: { $0.id == peer }) else { return }
+            print(match.description)
+        }
+    }
+
+    /// Logs the entire PeerStore to the console once the lookup completes.
+    public func dumpAll() {
+        self.all().whenSuccess { peers in
+            for peer in peers {
+                print(peer.description)
+            }
+        }
+    }
 
     /// Given a `PeerInfo` object this method adds both the `PeerID` and the associated `Multiaddr`s to the `PeerStore`.
     /// - Parameters:
