@@ -43,7 +43,6 @@ public final class ComprehensivePeer: Sendable {
 
     private let state: NIOLockedValueBox<State>
 
-    
     /// The addresses associated with this peer
     ///
     /// - Note: Consider using  the ``insert(address:)``/ ``remove(address:)``
@@ -241,13 +240,13 @@ public protocol PeerStore: KeyRepository, AddressRepository, ProtocolRepository,
     /// - Warning: This can be slow and resource heavy if the peerstore contains a large
     ///   number of peers.
     func all() -> EventLoopFuture<[ComprehensivePeer]>
-    
+
     /// Returns the number of Peers that are currently stored in the PeerStore
     func count() -> EventLoopFuture<Int>
-    
+
     /// Logs the specified peer to the console
     func dump(peer: PeerID)
-    
+
     /// Logs the entire PeerStore to the console
     func dumpAll()
 
@@ -758,7 +757,7 @@ extension MetadataRepository {
             metadata[metaKey.rawValue].map { String(decoding: $0, as: UTF8.self) }
         }
     }
-    
+
     public func setStringMetadata(
         forKey metaKey: MetadataBook.Keys,
         value: String,
@@ -771,16 +770,21 @@ extension MetadataRepository {
     public func getAgentVersion(forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<String?> {
         self.getStringMetadata(forKey: .AgentVersion, forPeer: peer, on: on)
     }
-    
-    public func setAgentVersion(_ version: String, forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
+
+    public func setAgentVersion(_ version: String, forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void>
+    {
         self.setStringMetadata(forKey: .AgentVersion, value: version, forPeer: peer, on: on)
     }
 
     public func getProtocolVersion(forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<String?> {
         self.getStringMetadata(forKey: .ProtocolVersion, forPeer: peer, on: on)
     }
-    
-    public func setProtocolVersion(_ version: String, forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
+
+    public func setProtocolVersion(
+        _ version: String,
+        forPeer peer: PeerID,
+        on: EventLoop? = nil
+    ) -> EventLoopFuture<Void> {
         self.setStringMetadata(forKey: .ProtocolVersion, value: version, forPeer: peer, on: on)
     }
 
@@ -789,8 +793,12 @@ extension MetadataRepository {
             string.flatMap { try? Multiaddr($0) }
         }
     }
-    
-    public func setObservedAddress(_ address: Multiaddr, forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void> {
+
+    public func setObservedAddress(
+        _ address: Multiaddr,
+        forPeer peer: PeerID,
+        on: EventLoop? = nil
+    ) -> EventLoopFuture<Void> {
         self.setStringMetadata(forKey: .ObservedAddress, value: address.description, forPeer: peer, on: on)
     }
 }
@@ -991,7 +999,7 @@ extension MetadataRepository {
     public func setAgentVersion(_ version: String, forPeer peer: PeerID) async throws {
         try await self.setAgentVersion(version, forPeer: peer, on: nil).get()
     }
-    
+
     public func getAgentVersion(forPeer peer: PeerID) async throws -> String? {
         try await self.getAgentVersion(forPeer: peer, on: nil).get()
     }
@@ -999,11 +1007,11 @@ extension MetadataRepository {
     public func setProtocolVersion(_ version: String, forPeer peer: PeerID) async throws {
         try await self.setProtocolVersion(version, forPeer: peer, on: nil).get()
     }
-    
+
     public func getProtocolVersion(forPeer peer: PeerID) async throws -> String? {
         try await self.getProtocolVersion(forPeer: peer, on: nil).get()
     }
-    
+
     public func setObservedAddress(_ address: Multiaddr, forPeer peer: PeerID) async throws {
         try await self.setObservedAddress(address, forPeer: peer, on: nil).get()
     }
