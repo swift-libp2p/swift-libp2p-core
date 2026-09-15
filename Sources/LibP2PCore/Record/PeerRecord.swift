@@ -101,8 +101,8 @@ public final class PeerRecord: Record, Hashable, Sendable {
 
     public func unsignedPayload() throws -> [UInt8] {
         (domain.utf8).uVarIntLengthPrefixed
-        + self.codec.envelopePayloadType.uVarIntLengthPrefixed
-        + (try self.marshal()).uVarIntLengthPrefixed
+            + self.codec.envelopePayloadType.uVarIntLengthPrefixed
+            + (try self.marshal()).uVarIntLengthPrefixed
     }
 }
 
