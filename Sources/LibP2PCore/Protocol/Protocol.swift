@@ -165,9 +165,9 @@ public struct SemVerProtocol: Equatable, Hashable, Sendable {
     }
 
     /// The protocols name (ex: plaintext)
-    let proto: String
+    public let proto: String
     /// The protocols version (ex: 2.0.0)
-    let version: SemVersion?
+    public let version: SemVersion?
 
     /// Instantiates a SemVerProtocol matching the exact version specified
     public init(proto: String, version: ProtocolVersion?) {
@@ -197,7 +197,6 @@ public struct SemVerProtocol: Equatable, Hashable, Sendable {
             // We have a version
             let numbers = last.split(separator: ".").compactMap { Int($0) }
             guard numbers.count == 3 else {
-                print("Failed to parse Version from proto string '\(string)'")
                 return nil
             }
             semVer = ProtocolVersion(major: numbers[0], minor: numbers[1], patch: numbers[2])
