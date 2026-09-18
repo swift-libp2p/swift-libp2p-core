@@ -12,7 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-public protocol ProtocolRepository {
+public protocol ProtocolRepository: Sendable {
     func removeAllProtocols(forPeer: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
     func add(protocol: SemVerProtocol, toPeer: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
     func add(protocols: [SemVerProtocol], toPeer: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
