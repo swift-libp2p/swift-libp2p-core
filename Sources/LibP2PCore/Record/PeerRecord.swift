@@ -21,7 +21,6 @@ public final class PeerRecord: Record, Hashable, Sendable {
     public let multiaddrs: [Multiaddr]
     public let sequenceNumber: UInt64
 
-    public var domain: String { PeerRecord.codec.name }
     public var codec: Codecs { PeerRecord.codec }
 
     public init(
