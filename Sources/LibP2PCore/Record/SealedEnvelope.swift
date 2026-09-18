@@ -108,7 +108,7 @@ public struct SealedEnvelope: Envelope, Sendable {
     }
 
     private func verifySignature() throws -> Bool {
-        guard let type = try? Multicodec.getCodecEnum(bytes: self.payloadType) else {
+        guard let type = try? self.payloadType.multicodec().codec else {
             throw RecordError.emptyPayloadType
         }
         guard let publicKey = self.pubKey.keyPair?.publicKey else { throw RecordError.noPublicKey }
