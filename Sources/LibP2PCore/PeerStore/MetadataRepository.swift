@@ -111,7 +111,7 @@ extension MetadataBook.Keys {
     public static var Discovered: Self { .discovered }
 }
 
-public protocol MetadataRepository {
+public protocol MetadataRepository: Sendable {
     func removeAllMetadata(forPeer: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
     func add(metaKey: String, data: [UInt8], toPeer: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
     func add(metaKey: MetadataBook.Keys, data: [UInt8], toPeer: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
