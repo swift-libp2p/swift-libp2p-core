@@ -48,7 +48,7 @@ public protocol TransportManager {
 }
 
 /// This can be a placeholder for implementations to register their keys / configs on.
-public enum TransportConfig {}
+public enum TransportConfig: Sendable {}
 
 /// Transport represents any device by which you can connect to and accept
 /// connections from other peers.
