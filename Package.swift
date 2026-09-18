@@ -62,11 +62,21 @@ let package = Package(
             resources: [
                 .copy("Protobufs/Envelope.proto"),
                 .copy("Protobufs/PeerRecord.proto"),
-            ]
+            ],
+            swiftSettings: swiftSettings
         ),
         .testTarget(
             name: "LibP2PCoreTests",
-            dependencies: ["LibP2PCore"]
+            dependencies: ["LibP2PCore"],
+            swiftSettings: swiftSettings
         ),
     ]
 )
+
+// matches swift-libp2p's swiftSettings so both compile the same upcoming-feature set.
+var swiftSettings: [SwiftSetting] {
+    [
+        .enableUpcomingFeature("InferIsolatedConformances"),
+        .enableUpcomingFeature("ImmutableWeakCaptures"),
+    ]
+}
