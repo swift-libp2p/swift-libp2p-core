@@ -16,13 +16,13 @@ public typealias Metadata = [String: [UInt8]]
 
 public struct MetadataBook: Sendable {
     public enum Keys: String, Sendable {
-        case AgentVersion = "agentVersion"
-        case ProtocolVersion = "protocolVersion"
-        case Latency = "latency"
-        case LastHandshake = "lastHandshake"
-        case ObservedAddress = "observedAddress"
-        case Prunable = "prunable"
-        case Discovered = "discovered"
+        case agentVersion
+        case protocolVersion
+        case latency
+        case lastHandshake
+        case observedAddress
+        case prunable
+        case discovered
     }
 
     public struct LatencyMetadata: Codable, CustomStringConvertible, Sendable {
@@ -91,6 +91,24 @@ public struct MetadataBook: Sendable {
             "Peer Importance: \(prunable.description)"
         }
     }
+}
+
+// Deprecated UpperCamelCase spellings of the `MetadataBook.Keys` cases (pre-0.6.0).
+extension MetadataBook.Keys {
+    @available(*, deprecated, renamed: "agentVersion")
+    public static var AgentVersion: Self { .agentVersion }
+    @available(*, deprecated, renamed: "protocolVersion")
+    public static var ProtocolVersion: Self { .protocolVersion }
+    @available(*, deprecated, renamed: "latency")
+    public static var Latency: Self { .latency }
+    @available(*, deprecated, renamed: "lastHandshake")
+    public static var LastHandshake: Self { .lastHandshake }
+    @available(*, deprecated, renamed: "observedAddress")
+    public static var ObservedAddress: Self { .observedAddress }
+    @available(*, deprecated, renamed: "prunable")
+    public static var Prunable: Self { .prunable }
+    @available(*, deprecated, renamed: "discovered")
+    public static var Discovered: Self { .discovered }
 }
 
 public protocol MetadataRepository {
@@ -218,12 +236,12 @@ extension MetadataRepository {
         forPeer peer: PeerID,
         on: EventLoop? = nil
     ) -> EventLoopFuture<Void> {
-        self.add(metaKey: .LastHandshake, data: Self.encodeTimestamp(date), toPeer: peer, on: on)
+        self.add(metaKey: .lastHandshake, data: Self.encodeTimestamp(date), toPeer: peer, on: on)
     }
 
     public func getLastHandshake(forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Date?> {
         self.getMetadata(forPeer: peer, on: on).map { metadata in
-            metadata[MetadataBook.Keys.LastHandshake.rawValue].flatMap(Self.decodeTimestamp)
+            metadata[MetadataBook.Keys.lastHandshake.rawValue].flatMap(Self.decodeTimestamp)
         }
     }
 
@@ -232,12 +250,12 @@ extension MetadataRepository {
         forPeer peer: PeerID,
         on: EventLoop? = nil
     ) -> EventLoopFuture<Void> {
-        self.add(metaKey: .Discovered, data: Self.encodeTimestamp(date), toPeer: peer, on: on)
+        self.add(metaKey: .discovered, data: Self.encodeTimestamp(date), toPeer: peer, on: on)
     }
 
     public func getDiscovered(forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Date?> {
         self.getMetadata(forPeer: peer, on: on).map { metadata in
-            metadata[MetadataBook.Keys.Discovered.rawValue].flatMap(Self.decodeTimestamp)
+            metadata[MetadataBook.Keys.discovered.rawValue].flatMap(Self.decodeTimestamp)
         }
     }
 
@@ -252,7 +270,7 @@ extension MetadataRepository {
         on: EventLoop
     ) -> EventLoopFuture<Void> {
         self.add(
-            metaKey: .Prunable,
+            metaKey: .prunable,
             value: MetadataBook.PrunableMetadata(prunable: prunable),
             toPeer: peer,
             on: on
@@ -263,7 +281,7 @@ extension MetadataRepository {
         forPeer peer: PeerID,
         on: EventLoop? = nil
     ) -> EventLoopFuture<MetadataBook.PrunableMetadata.Prunable> {
-        self.getMetadata(MetadataBook.PrunableMetadata.self, forKey: .Prunable, forPeer: peer, on: on)
+        self.getMetadata(MetadataBook.PrunableMetadata.self, forKey: .prunable, forPeer: peer, on: on)
             .map { $0?.prunable ?? .prunable }
     }
 
@@ -274,14 +292,14 @@ extension MetadataRepository {
         forPeer peer: PeerID,
         on: EventLoop
     ) -> EventLoopFuture<Void> {
-        self.add(metaKey: .Latency, value: latency, toPeer: peer, on: on)
+        self.add(metaKey: .latency, value: latency, toPeer: peer, on: on)
     }
 
     public func getLatency(
         forPeer peer: PeerID,
         on: EventLoop? = nil
     ) -> EventLoopFuture<MetadataBook.LatencyMetadata?> {
-        self.getMetadata(MetadataBook.LatencyMetadata.self, forKey: .Latency, forPeer: peer, on: on)
+        self.getMetadata(MetadataBook.LatencyMetadata.self, forKey: .latency, forPeer: peer, on: on)
     }
 
     // MARK: Plain-string entries
@@ -306,16 +324,16 @@ extension MetadataRepository {
     }
 
     public func getAgentVersion(forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<String?> {
-        self.getStringMetadata(forKey: .AgentVersion, forPeer: peer, on: on)
+        self.getStringMetadata(forKey: .agentVersion, forPeer: peer, on: on)
     }
 
     public func setAgentVersion(_ version: String, forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Void>
     {
-        self.setStringMetadata(forKey: .AgentVersion, value: version, forPeer: peer, on: on)
+        self.setStringMetadata(forKey: .agentVersion, value: version, forPeer: peer, on: on)
     }
 
     public func getProtocolVersion(forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<String?> {
-        self.getStringMetadata(forKey: .ProtocolVersion, forPeer: peer, on: on)
+        self.getStringMetadata(forKey: .protocolVersion, forPeer: peer, on: on)
     }
 
     public func setProtocolVersion(
@@ -323,11 +341,11 @@ extension MetadataRepository {
         forPeer peer: PeerID,
         on: EventLoop? = nil
     ) -> EventLoopFuture<Void> {
-        self.setStringMetadata(forKey: .ProtocolVersion, value: version, forPeer: peer, on: on)
+        self.setStringMetadata(forKey: .protocolVersion, value: version, forPeer: peer, on: on)
     }
 
     public func getObservedAddress(forPeer peer: PeerID, on: EventLoop? = nil) -> EventLoopFuture<Multiaddr?> {
-        self.getStringMetadata(forKey: .ObservedAddress, forPeer: peer, on: on).map { string in
+        self.getStringMetadata(forKey: .observedAddress, forPeer: peer, on: on).map { string in
             string.flatMap { try? Multiaddr($0) }
         }
     }
@@ -337,7 +355,7 @@ extension MetadataRepository {
         forPeer peer: PeerID,
         on: EventLoop? = nil
     ) -> EventLoopFuture<Void> {
-        self.setStringMetadata(forKey: .ObservedAddress, value: address.description, forPeer: peer, on: on)
+        self.setStringMetadata(forKey: .observedAddress, value: address.description, forPeer: peer, on: on)
     }
 }
 
@@ -407,7 +425,7 @@ extension MetadataRepository {
         _ prunable: MetadataBook.PrunableMetadata.Prunable,
         forPeer peer: PeerID
     ) async throws {
-        try await self.add(metaKey: .Prunable, value: MetadataBook.PrunableMetadata(prunable: prunable), toPeer: peer)
+        try await self.add(metaKey: .prunable, value: MetadataBook.PrunableMetadata(prunable: prunable), toPeer: peer)
     }
 
     public func getPrunability(forPeer peer: PeerID) async throws -> MetadataBook.PrunableMetadata.Prunable {
@@ -415,7 +433,7 @@ extension MetadataRepository {
     }
 
     public func setLatency(_ latency: MetadataBook.LatencyMetadata, forPeer peer: PeerID) async throws {
-        try await self.add(metaKey: .Latency, value: latency, toPeer: peer)
+        try await self.add(metaKey: .latency, value: latency, toPeer: peer)
     }
 
     public func getLatency(forPeer peer: PeerID) async throws -> MetadataBook.LatencyMetadata? {
