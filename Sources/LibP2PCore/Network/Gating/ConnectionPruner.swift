@@ -179,14 +179,12 @@ public actor LoadScaledConnectionPruner: ConnectionPruner {
         now: Date
     ) async -> [UUID: ConnectionPruneAction] {
         var actions: [UUID: ConnectionPruneAction] = [:]
-        let idleExpiration = getCurrentIdleTimeout(context: context)
         for connection in connections {
             if let action = Self.action(
                 for: connection,
                 context: context,
                 now: now,
-                configuration: self.configuration,
-                expiration: idleExpiration
+                configuration: self.configuration
             ) {
                 actions[connection.id] = action
             }
@@ -199,8 +197,7 @@ public actor LoadScaledConnectionPruner: ConnectionPruner {
         for connection: ConnectionLivenessSnapshot,
         context: ConnectionPruneContext,
         now: Date,
-        configuration: Configuration,
-        expiration: Double
+        configuration: Configuration
     ) -> ConnectionPruneAction? {
         // The connection's closed but it hasn't been cleaned up yet.
         if connection.status == .closed {
@@ -210,13 +207,15 @@ public actor LoadScaledConnectionPruner: ConnectionPruner {
         // Skip connections that don't report activity.
         guard let lastActivityAt = connection.lastActivityAt else { return nil }
 
+        let expiration = Self.getCurrentIdleTimeout(context: context, configuration: configuration)
+
         // If the connection's been idle longer than expiration, close it...
         return now.timeIntervalSince(lastActivityAt) > expiration ? .close : nil
     }
 
     // Scale the idle window with load
     // Interpolates between min and max expiration based on the percent of maxConnections consumed
-    private func getCurrentIdleTimeout(context: ConnectionPruneContext) -> Double {
+    static func getCurrentIdleTimeout(context: ConnectionPruneContext, configuration: Configuration) -> Double {
         let percentConsumed =
             (Double(context.currentConnectionCount + context.inboundBuffer) / Double(context.maxConnections))
         let factor = max(0.0, min(1.0, 1.0 - percentConsumed))
