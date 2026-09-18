@@ -76,6 +76,10 @@ let package = Package(
 // matches swift-libp2p's swiftSettings so both compile the same upcoming-feature set.
 var swiftSettings: [SwiftSetting] {
     [
+        //.enableUpcomingFeature("ExistentialAny"),
+        .enableUpcomingFeature("InternalImportsByDefault"),
+        .enableUpcomingFeature("MemberImportVisibility"),
+        .enableUpcomingFeature("NonisolatedNonsendingByDefault"),
         .enableUpcomingFeature("InferIsolatedConformances"),
         .enableUpcomingFeature("ImmutableWeakCaptures"),
     ]
