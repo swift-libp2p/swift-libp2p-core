@@ -12,8 +12,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-import Multiaddr
-import PeerID
+public import Multiaddr
+public import PeerID
 
 //public protocol KeyPair {
 //    var publicKey:PublicKey { get }

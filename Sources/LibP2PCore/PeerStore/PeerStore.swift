@@ -14,7 +14,7 @@
 
 import Foundation
 import NIOConcurrencyHelpers
-import NIOCore
+public import NIOCore
 
 public protocol PeerStore: KeyRepository, AddressRepository, ProtocolRepository, MetadataRepository, RecordRepository,
     Sendable

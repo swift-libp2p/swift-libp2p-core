@@ -13,8 +13,8 @@
 //===----------------------------------------------------------------------===//
 
 import LibP2PCrypto
-import Multiaddr
-import PeerID
+public import Multiaddr
+public import PeerID
 
 public protocol Record: Equatable, Sendable {
     var peerID: PeerID { get }

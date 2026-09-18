@@ -13,7 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 public import NIOConcurrencyHelpers
-import NIOCore
+public import NIOCore
 
 public protocol Stream: AnyObject, Sendable {
     /// The underlying connection this stream belongs to

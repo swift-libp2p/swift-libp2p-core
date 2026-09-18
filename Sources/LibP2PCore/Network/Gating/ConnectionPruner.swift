@@ -12,10 +12,10 @@
 //
 //===----------------------------------------------------------------------===//
 
-import Foundation
-import Multiaddr
-import NIOCore
-import PeerID
+public import Foundation
+public import Multiaddr
+public import NIOCore
+public import PeerID
 
 /// A connection's observable liveness.
 ///

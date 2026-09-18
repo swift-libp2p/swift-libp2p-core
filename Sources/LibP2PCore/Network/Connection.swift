@@ -12,12 +12,12 @@
 //
 //===----------------------------------------------------------------------===//
 
-import Foundation
+public import Foundation
 public import Logging
 import Multiaddr
 import NIOConcurrencyHelpers
-import NIOCore
-import PeerID
+public import NIOCore
+public import PeerID
 
 /// The connection interface contains all the metadata associated with it, as well as an array of the streams opened through this connection
 ///

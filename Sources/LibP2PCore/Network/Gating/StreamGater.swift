@@ -12,9 +12,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-import Foundation
-import Multiaddr
-import PeerID
+public import Foundation
+public import Multiaddr
+public import PeerID
 
 /// The verdict a `StreamGater` returns for an outbound stream it was asked about.
 public enum OutboundStreamGateDecision: Sendable {

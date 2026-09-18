@@ -12,7 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-import NIOCore
+public import NIOCore
 
 /// Upgrades a raw `Connection` by negotiating and installing a security module (encryption /
 /// authentication) on its channel pipeline.

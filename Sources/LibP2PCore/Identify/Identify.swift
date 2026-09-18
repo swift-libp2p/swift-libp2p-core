@@ -12,9 +12,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-import Multiaddr
-import NIOCore
-import PeerID
+public import Multiaddr
+public import NIOCore
+public import PeerID
 
 /// The `IdentifyMessage` struct was removed in 0.6.0
 /// Its name shadowed the generated protobuf `IdentifyMessage` that swift-libp2p actually uses.

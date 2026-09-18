@@ -12,7 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-import NIOCore
+public import NIOCore
 
 public protocol Muxer: AnyObject, Sendable {
     static var protocolCodec: String { get }
