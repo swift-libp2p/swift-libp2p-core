@@ -12,8 +12,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-import Multiaddr
-import NIOCore
+public import Multiaddr
+public import NIOCore
 import PeerID
 
 /// A CapableConn represents a connection that offers the basic

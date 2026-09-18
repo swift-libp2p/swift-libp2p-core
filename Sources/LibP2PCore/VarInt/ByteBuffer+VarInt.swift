@@ -12,8 +12,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-import NIOCore
-import VarInt
+public import NIOCore
+public import VarInt
 
 extension ByteBuffer {
 

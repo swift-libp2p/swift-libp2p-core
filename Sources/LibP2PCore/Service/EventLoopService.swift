@@ -12,7 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-import NIOCore
+public import NIOCore
 
 public protocol EventLoopService {
     var eventLoop: EventLoop { get }

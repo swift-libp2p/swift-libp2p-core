@@ -13,7 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 import NIOCore
-import PeerID
+public import PeerID
 
 public protocol Security {}
 

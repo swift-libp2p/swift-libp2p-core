@@ -13,9 +13,9 @@
 //===----------------------------------------------------------------------===//
 
 import LibP2PCrypto
-import Multiaddr
-import NIOCore
-import PeerID
+public import Multiaddr
+public import NIOCore
+public import PeerID
 
 public enum RoutingErrors: Error, Sendable {
     /// ErrNotFound is returned when the router fails to find the requested record.
