@@ -25,7 +25,7 @@ public protocol Advertiser: Sendable {
 /// Discoverer is an interface for peer discovery
 public protocol Discoverer: Sendable {
     /// FindPeers discovers peers providing a service
-    func findPeers(supportingService: String, options: Options?) -> EventLoopFuture<DiscoverdPeers>
+    func findPeers(supportingService: String, options: Options?) -> EventLoopFuture<DiscoveredPeers>
 
     /// Allows LibP2P to register a callback / event handler on the Discovery mechanism to be alerted of various events, such as peer discovery.
     var onPeerDiscovered: (@Sendable (_ peerInfo: PeerInfo) -> Void)? { get set }
@@ -66,7 +66,10 @@ public struct StandardOptions: Options {
     }
 }
 
-public struct DiscoverdPeers: Sendable {
+@available(*, deprecated, renamed: "DiscoveredPeers")
+public typealias DiscoverdPeers = DiscoveredPeers
+
+public struct DiscoveredPeers: Sendable {
     public let cookie: Data?
     public let peers: [PeerInfo]
 
@@ -85,7 +88,7 @@ extension Advertiser {
 }
 
 extension Discoverer {
-    public func findPeers(supportingService service: String, options: Options? = nil) async throws -> DiscoverdPeers {
+    public func findPeers(supportingService service: String, options: Options? = nil) async throws -> DiscoveredPeers {
         try await self.findPeers(supportingService: service, options: options).get()
     }
 }
