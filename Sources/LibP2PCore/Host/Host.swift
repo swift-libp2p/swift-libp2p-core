@@ -71,8 +71,7 @@ public protocol Host {
     var connManager: ConnectionManager { get }
 
     /// EventBus returns the hosts eventbus
-    /// - Note: Removed in 0.6.0 along with the empty `EventBus` placeholder protocol — the
-    ///   event-bus abstraction lives at the application layer for now.
+    /// - Note: Removed in 0.6.0, the event-bus abstraction lives at the application layer.
     //var eventBus: EventBus { get }
 }
 
