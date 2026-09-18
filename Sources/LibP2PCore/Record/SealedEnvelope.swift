@@ -44,7 +44,7 @@ public struct SealedEnvelope: Envelope, Sendable {
     /// Creates a new Signed & SealedEnvelope containing the specified Record, ready for marsahling and sending to remote peers...
     public init<R: Record>(record: R, signedWithKey key: PeerID) throws {
         guard let privKey = key.keyPair?.privateKey else {
-            throw Errors.noPrivateKey
+            throw RecordError.noPrivateKey
         }
 
         self.pubKey = record.peerID
@@ -82,13 +82,13 @@ public struct SealedEnvelope: Envelope, Sendable {
         self.signature = env.signature.byteArray
 
         guard try verifySignature() else {
-            throw Errors.invalidSignature
+            throw RecordError.invalidSignature
         }
     }
 
     public func marshal() throws -> [UInt8] {
         guard let pubKey = self.pubKey.keyPair?.publicKey else {
-            throw Errors.noPublicKey
+            throw RecordError.noPublicKey
         }
         var env = EnvelopeMessage()
         //var pub = Envelope.PublicKey()
@@ -106,8 +106,10 @@ public struct SealedEnvelope: Envelope, Sendable {
     }
 
     private func verifySignature() throws -> Bool {
-        guard let type = try? Multicodec.getCodecEnum(bytes: self.payloadType) else { throw Errors.emptyPayloadType }
-        guard let publicKey = self.pubKey.keyPair?.publicKey else { throw Errors.noPublicKey }
+        guard let type = try? Multicodec.getCodecEnum(bytes: self.payloadType) else {
+            throw RecordError.emptyPayloadType
+        }
+        guard let publicKey = self.pubKey.keyPair?.publicKey else { throw RecordError.noPublicKey }
         switch type {
         /// - Note: We check for cidv3 here due to go-libp2p's usage of [0x03, 0x01] libp2p-peer-record hardcoded prefix values...
         case .cidv3, .libp2p_peer_record:  //PeerRecord
@@ -117,28 +119,9 @@ public struct SealedEnvelope: Envelope, Sendable {
             return try publicKey.verify(signature: Data(self.signature), for: Data(pRec.unsignedPayload()))
 
         default:
-            throw Errors.emptyPayloadType
+            throw RecordError.emptyPayloadType
         }
     }
-
-    public enum Errors: Error, CustomStringConvertible {
-        case noPrivateKey
-        case noPublicKey
-        case emptyDomain
-        case emptyPayloadType
-        case invalidSignature
-
-        public var description: String {
-            switch self {
-            case .noPrivateKey: return "the PeerID provided doesn't contain a private key"
-            case .noPublicKey: return "the PeerID provided doesn't contain a public key"
-            case .emptyDomain: return "envelope domain must not be empty"
-            case .emptyPayloadType: return "payloadType must not be empty"
-            case .invalidSignature: return "invalid signature or incorrect domain"
-            }
-        }
-    }
-}
 
 extension SealedEnvelope: CustomStringConvertible {
     public var description: String {

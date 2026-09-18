@@ -48,7 +48,7 @@ public final class PeerRecord: Record, Hashable, Sendable {
         let validatingPubKey = try PeerID(marshaledPublicKey: pubKey)
         guard pr.peerID.byteArray == validatingPubKey.id else {
             // PubKey bytes don't match
-            throw Errors.noPublicKey
+            throw RecordError.noPublicKey
         }
         self.peerID = validatingPubKey
 
