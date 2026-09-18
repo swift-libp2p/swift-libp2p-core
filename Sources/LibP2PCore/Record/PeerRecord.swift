@@ -79,12 +79,6 @@ public final class PeerRecord: Record, Hashable, Sendable {
         return try rec.serializedData().byteArray
     }
 
-    public func equals<R>(_ r: R) -> Bool where R: Record {
-        self.peerID == r.peerID
-            && self.multiaddrs == r.multiaddrs
-            && self.sequenceNumber == r.sequenceNumber
-    }
-
     public static func == (lhs: PeerRecord, rhs: PeerRecord) -> Bool {
         lhs.equals(rhs)
     }
@@ -92,10 +86,6 @@ public final class PeerRecord: Record, Hashable, Sendable {
     public func hash(into hasher: inout Hasher) {
         hasher.combine(self.peerID.id)
         hasher.combine(self.multiaddrs)
-    }
-
-    public func seal(withPrivateKey key: PeerID) throws -> Envelope {
-        try SealedEnvelope(record: self, signedWithKey: key)
     }
 
     public func unsignedPayload() throws -> [UInt8] {
