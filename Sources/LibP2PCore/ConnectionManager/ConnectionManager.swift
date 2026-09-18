@@ -12,7 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-import NIOCore
+public import NIOCore
 
 public enum ConnectionManagerError: Error, Sendable {
     /// There is no existing connection to the requested peer.

@@ -12,8 +12,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-import NIOCore
-import PeerID
+public import NIOCore
+public import PeerID
 
 public protocol Security {}
 

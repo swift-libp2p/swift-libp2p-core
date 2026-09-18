@@ -13,7 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 import Multiaddr
-import NIOCore
+public import NIOCore
 import PeerID
 
 /// Advertiser is an interface for advertising services

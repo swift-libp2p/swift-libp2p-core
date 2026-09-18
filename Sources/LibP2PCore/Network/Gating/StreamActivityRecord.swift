@@ -12,7 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-import Foundation
+public import Foundation
 import NIOConcurrencyHelpers
 
 /// The last moment a single muxed stream actually moved bytes in either direction.

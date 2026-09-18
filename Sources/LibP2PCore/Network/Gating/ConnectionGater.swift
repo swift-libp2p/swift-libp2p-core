@@ -12,9 +12,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-import Foundation
-import Multiaddr
-import PeerID
+public import Foundation
+public import Multiaddr
+public import PeerID
 
 /// The verdict a `ConnectionGater` returns at each intercept point.
 public enum ConnectionGateDecision: Sendable {

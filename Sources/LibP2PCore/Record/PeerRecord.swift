@@ -12,6 +12,9 @@
 //
 //===----------------------------------------------------------------------===//
 
+import CryptoSwift
+import SwiftProtobuf
+
 public final class PeerRecord: Record, Hashable, Sendable {
 
     //static let domain:String = "libp2p-peer-record"

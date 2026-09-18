@@ -12,9 +12,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-import Multiaddr
-import NIOCore
-import PeerID
+public import Multiaddr
+public import NIOCore
+public import PeerID
 
 /// Host is an object participating in a p2p network, which
 /// implements protocols or provides services. It handles

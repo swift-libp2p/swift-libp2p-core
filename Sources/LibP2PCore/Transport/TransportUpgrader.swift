@@ -12,8 +12,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-import Logging
-import NIOCore
+public import Logging
+public import NIOCore
 
 /// Drives protocol negotiation (e.g. multistream-select) when upgrading a raw channel into a
 /// full libp2p connection.

@@ -12,7 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-import NIOCore
+public import NIOCore
 
 /// Upgrades a secured `Connection` by negotiating and installing a stream `Muxer` on its
 /// channel pipeline.

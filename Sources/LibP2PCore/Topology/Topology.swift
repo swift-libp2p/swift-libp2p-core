@@ -12,8 +12,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-import NIOCore
-import PeerID
+public import NIOCore
+public import PeerID
 
 /// Taps into the current pool of connections and can filter connections / disconnection events to interested parties / subscribers
 public protocol Topology {

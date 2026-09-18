@@ -53,8 +53,8 @@ struct MultiaddrPeerIDTests {
     @Test func testGetPeerIDEmbeddedEd25519PublicKey() throws {
         let ma1 = try Multiaddr("/dnsaddr/bootstrap.libp2p.io/p2p/12D3KooWAfPDpPRRRBrmqy9is2zjU5srQ4hKuZitiGmh4NTTpS2d")
 
-        let embeddedKeyInBytes = try BaseEncoding.decode(ma1.getPeerIDString()!, as: .base58btc)
-        let peerID1 = try PeerID(fromBytesID: embeddedKeyInBytes.data.byteArray)
+        let embeddedKeyInBytes: [UInt8] = try BaseEncoding.decode(ma1.getPeerIDString()!, as: .base58btc)
+        let peerID1 = try PeerID(fromBytesID: embeddedKeyInBytes)
 
         let ma2 = try Multiaddr("/dnsaddr/bootstrap.libp2p.io/p2p/12D3KooWAfPDpPRRRBrmqy9is2zjU5srQ4hKuZitiGmh4NTTpS2d")
         let peerID2 = try ma2.getPeerID()

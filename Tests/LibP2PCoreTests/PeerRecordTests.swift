@@ -12,6 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+import LibP2PCrypto
 import Testing
 
 @testable import LibP2PCore

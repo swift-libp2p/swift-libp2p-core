@@ -12,7 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-import Multiaddr
+public import Multiaddr
 
 /// AddrAction represents an action taken on one of a Host's listen addresses.
 /// It is used to add context to address change events in EvtLocalAddressesUpdated.
