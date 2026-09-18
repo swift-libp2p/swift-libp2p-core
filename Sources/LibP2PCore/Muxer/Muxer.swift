@@ -14,7 +14,7 @@
 
 import NIOCore
 
-public protocol Muxer: AnyObject {
+public protocol Muxer: AnyObject, Sendable {
     static var protocolCodec: String { get }
     //init(_ config:MuxerConfig?)
 
