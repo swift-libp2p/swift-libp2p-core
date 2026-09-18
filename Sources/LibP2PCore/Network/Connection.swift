@@ -151,13 +151,13 @@ public protocol ConnectionLifecycleDelegate: AnyObject {
 
 public protocol ConnectionDelegate {
     /// Generic callback for any new Stream
-    var onNewStream: ((Stream) -> EventLoopFuture<Void>)? { get set }
+    var onNewStream: (@Sendable (Stream) -> EventLoopFuture<Void>)? { get set }
 
     /// Events for a particular Stream (init, ready, closed outbound, closed inbound, closed, reset, etc...)
-    var onStreamEvent: ((Stream, StreamEvent) -> EventLoopFuture<Void>)? { get set }
+    var onStreamEvent: (@Sendable (Stream, StreamEvent) -> EventLoopFuture<Void>)? { get set }
 
     /// Connection Events (opene
-    var onConnectionEvent: ((Connection, ConnectionEvent) -> EventLoopFuture<Void>)? { get set }
+    var onConnectionEvent: (@Sendable (Connection, ConnectionEvent) -> EventLoopFuture<Void>)? { get set }
 }
 
 /// Connection Metadata
@@ -227,6 +227,8 @@ public final class ConnectionStats: CustomStringConvertible, Sendable {
     /// The status of the connection.
     /// - Note: Setting the status also stamps the corresponding `timeline` timestamp (opened /
     ///   upgraded / closing / closed).
+    /// - Important: The setter exists for the `Connection` implementation that owns these stats.
+    ///   Nothing else should mutate a live connection's state.
     public var status: Status {
         get { self.state.withLockedValue { $0.status } }
         set {
