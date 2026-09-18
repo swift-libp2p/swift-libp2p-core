@@ -12,7 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-public protocol AddressRepository {
+public protocol AddressRepository: Sendable {
     /// - TODO: These operations should emit `onAddressAdded` / `onAddressRemoved` events once the
     ///   peerstore is wired into the `EventBus`. Nothing emits them today.
 
