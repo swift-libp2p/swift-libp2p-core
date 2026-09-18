@@ -239,7 +239,7 @@ public enum StreamState: UInt8, Sendable {
     case reset
 }
 
-public enum StreamEvent {
+public enum StreamEvent: Sendable {
     case initialized
     case ready
     case closing
