@@ -122,16 +122,4 @@ public struct SealedEnvelope: Envelope, Sendable {
             throw RecordError.emptyPayloadType
         }
     }
-
-extension SealedEnvelope: CustomStringConvertible {
-    public var description: String {
-        """
-        --- 💌 Sealed Envelope 💌 ---
-        PeerID: \(pubKey) (has pubKey: \(pubKey.keyPair?.publicKey != nil ? "true" : "false"))
-        Payload Type: \((try? Multicodec.getCodec(bytes: self.payloadType)) ?? self.payloadType.asString(base: .base16) )
-        Raw Payload: \(self.rawPayload.asString(base: .base16))
-        Signature: \(self.signature.asString(base: .base16))
-        -----------------------------
-        """
-    }
 }
