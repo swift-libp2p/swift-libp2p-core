@@ -12,7 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-import Multiaddr
+public import Multiaddr
 
 public enum PeerDiscoveryEvent: Sendable {
     //case ready
