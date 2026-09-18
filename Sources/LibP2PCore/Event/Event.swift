@@ -15,4 +15,6 @@
 /// Any Event that gets passed into / over the Eventbus must conform to this Event protocol
 public protocol Event {}
 
-public protocol EventBus {}
+// The empty `EventBus` placeholder protocol was removed in 0.6.0
+// The event-bus abstraction lives at the application layer for now.
+// public protocol EventBus {}

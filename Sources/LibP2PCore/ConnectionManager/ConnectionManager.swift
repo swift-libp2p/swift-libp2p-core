@@ -56,13 +56,24 @@ extension ConnectionManager {
 /// Peer Connectedness
 public enum Connectedness: Sendable {
     /// We have not yet attempted to connect to the peer in question
-    case NotConnected
+    case notConnected
     /// We have an existing open connection to the peer in question
-    case Connected
+    case connected
     /// We have previously connected to this peer, and can most likely connect to them again
-    case CanConnect
+    case canConnect
     /// We have attempted to connect to this peer and we unable to establish a capcable connection
-    case CanNotConnect
+    case canNotConnect
+}
+
+extension Connectedness {
+    @available(*, deprecated, renamed: "notConnected")
+    public static var NotConnected: Connectedness { .notConnected }
+    @available(*, deprecated, renamed: "connected")
+    public static var Connected: Connectedness { .connected }
+    @available(*, deprecated, renamed: "canConnect")
+    public static var CanConnect: Connectedness { .canConnect }
+    @available(*, deprecated, renamed: "canNotConnect")
+    public static var CanNotConnect: Connectedness { .canNotConnect }
 }
 
 // MARK: - Async

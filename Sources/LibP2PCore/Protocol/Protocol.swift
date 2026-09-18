@@ -27,6 +27,13 @@ public protocol LibP2PProtocol: Sendable {
     var version: SemanticVersion { get }
 }
 
+extension LibP2PProtocol {
+    /// The canonical `/name/version` rendering of this protocol.
+    public var stringValue: String {
+        "/\(self.proto)/\(self.version.stringValue)"
+    }
+}
+
 public protocol SemanticVersion: Sendable {
     var stringValue: String { get }
 }

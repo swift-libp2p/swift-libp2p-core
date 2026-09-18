@@ -42,38 +42,30 @@ public final class ComprehensivePeer: Sendable {
 
     /// The addresses associated with this peer
     ///
-    /// - Note: Consider using  the ``insert(address:)``/ ``remove(address:)``
-    ///   functions instead of setting this parameter directly
+    /// - Note: Mutate through the ``insert(address:)`` / ``remove(address:)``.
     public var addresses: Set<Multiaddr> {
-        get { self.state.withLockedValue { $0.addresses } }
-        set { self.state.withLockedValue { $0.addresses = newValue } }
+        self.state.withLockedValue { $0.addresses }
     }
 
     /// The protocols this peer claims to speak
     ///
-    /// - Note: Consider using  the ``insert(protocol:)``/ ``remove(protocol:)``
-    ///   functions instead of setting this parameter directly
+    /// - Note: Mutate through the ``insert(protocol:)`` / ``remove(protocol:)``.
     public var protocols: Set<SemVerProtocol> {
-        get { self.state.withLockedValue { $0.protocols } }
-        set { self.state.withLockedValue { $0.protocols = newValue } }
+        self.state.withLockedValue { $0.protocols }
     }
 
     /// The Metadata associated with this peer
     ///
-    /// - Note: Consider using  the ``setMetadata(:, forKey:)``/ ``metadata(forKey:)``
-    ///   functions instead of setting this parameter directly
+    /// - Note: Mutate through the ``setMetadata(_:forKey:)`` / ``metadata(forKey:)``.
     public var metadata: Metadata {
-        get { self.state.withLockedValue { $0.metadata } }
-        set { self.state.withLockedValue { $0.metadata = newValue } }
+        self.state.withLockedValue { $0.metadata }
     }
 
     /// The signed Records we have for this Peer
     ///
-    /// - Note: Consider using  the ``insert(record:, keepingMostRecent:)``
-    ///   function instead of setting this parameter directly
+    /// - Note: Mutate through the ``insert(record:keepingMostRecent:)``.
     public var records: Set<PeerRecord> {
-        get { self.state.withLockedValue { $0.records } }
-        set { self.state.withLockedValue { $0.records = newValue } }
+        self.state.withLockedValue { $0.records }
     }
 
     public init(

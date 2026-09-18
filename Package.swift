@@ -53,6 +53,7 @@ let package = Package(
             name: "LibP2PCore",
             dependencies: [
                 .product(name: "NIOCore", package: "swift-nio"),
+                .product(name: "NIOConcurrencyHelpers", package: "swift-nio"),
                 .product(name: "Logging", package: "swift-log"),
                 .product(name: "PeerID", package: "swift-peer-id"),
                 .product(name: "Multiaddr", package: "swift-multiaddr"),
@@ -61,11 +62,21 @@ let package = Package(
             resources: [
                 .copy("Protobufs/Envelope.proto"),
                 .copy("Protobufs/PeerRecord.proto"),
-            ]
+            ],
+            swiftSettings: swiftSettings
         ),
         .testTarget(
             name: "LibP2PCoreTests",
-            dependencies: ["LibP2PCore"]
+            dependencies: ["LibP2PCore"],
+            swiftSettings: swiftSettings
         ),
     ]
 )
+
+// matches swift-libp2p's swiftSettings so both compile the same upcoming-feature set.
+var swiftSettings: [SwiftSetting] {
+    [
+        .enableUpcomingFeature("InferIsolatedConformances"),
+        .enableUpcomingFeature("ImmutableWeakCaptures"),
+    ]
+}

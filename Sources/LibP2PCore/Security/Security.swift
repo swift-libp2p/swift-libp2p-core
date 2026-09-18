@@ -2,7 +2,7 @@
 //
 // This source file is part of the swift-libp2p open source project
 //
-// Copyright (c) 2022-2025 swift-libp2p project authors
+// Copyright (c) 2022-2026 swift-libp2p project authors
 // Licensed under MIT
 //
 // See LICENSE for license information
@@ -43,51 +43,6 @@ public protocol SecureTransport {
     func secureOutbound(insecure: Connection, peer: PeerID) -> EventLoopFuture<Connection>
 }
 
-public protocol SecurityProtocolInstaller {
-    var protocolName: String { get }
-    var protocolVersion: String { get }
-
-    /// - TODO: Update this to conform to Libp2p Cryptos protocol `secureOutbound()` and `secureInbound()`
-    /// Have secureInbound install the appropriate inbound handlers and the secureOutbound install the outbound handlers, kinda strange but at least the verbage will be consistant.
-    func installHandlers(
-        on ctx: ChannelHandlerContext,
-        at position: ChannelPipeline.Position,
-        peerID: PeerID,
-        mode: LibP2PCore.Mode,
-        secured: EventLoopPromise<(Bool, PeerID?)>,
-        expectedRemotePeerID: String?
-    ) -> EventLoopFuture<Void>
-
-    func protocolString() -> String
-}
-
-extension SecurityProtocolInstaller {
-    public func protocolString() -> String {
-        if protocolVersion.isEmpty {
-            return "/\(protocolName)"
-        } else {
-            return "/\(protocolName)/\(protocolVersion)"
-        }
-    }
-
-    public func installHandlers(
-        on ctx: ChannelHandlerContext,
-        at position: ChannelPipeline.Position,
-        peerID: PeerID,
-        mode: LibP2PCore.Mode,
-        secured: EventLoopPromise<(Bool, PeerID?)>
-    ) -> EventLoopFuture<Void> {
-        self.installHandlers(
-            on: ctx,
-            at: position,
-            peerID: peerID,
-            mode: mode,
-            secured: secured,
-            expectedRemotePeerID: nil
-        )
-    }
-}
-
 // MARK: - Async
 
 extension SecureTransport {
@@ -97,28 +52,5 @@ extension SecureTransport {
 
     public func secureOutbound(insecure: Connection, peer: PeerID) async throws -> Connection {
         try await self.secureOutbound(insecure: insecure, peer: peer).get()
-    }
-}
-
-extension SecurityProtocolInstaller {
-    /// Installs the security handlers and awaits the negotiated `(authenticated, remotePeer)` result.
-    public func installHandlers(
-        on ctx: ChannelHandlerContext,
-        at position: ChannelPipeline.Position,
-        peerID: PeerID,
-        mode: LibP2PCore.Mode,
-        expectedRemotePeerID: String? = nil
-    ) async throws -> (Bool, PeerID?) {
-        let promise = ctx.eventLoop.makePromise(of: (Bool, PeerID?).self)
-        let secured = promise.futureResult
-        try await self.installHandlers(
-            on: ctx,
-            at: position,
-            peerID: peerID,
-            mode: mode,
-            secured: promise,
-            expectedRemotePeerID: expectedRemotePeerID
-        ).get()
-        return try await secured.get()
     }
 }

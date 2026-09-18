@@ -21,7 +21,6 @@ public final class PeerRecord: Record, Hashable, Sendable {
     public let multiaddrs: [Multiaddr]
     public let sequenceNumber: UInt64
 
-    public var domain: String { PeerRecord.codec.name }
     public var codec: Codecs { PeerRecord.codec }
 
     public init(
@@ -48,7 +47,7 @@ public final class PeerRecord: Record, Hashable, Sendable {
         let validatingPubKey = try PeerID(marshaledPublicKey: pubKey)
         guard pr.peerID.byteArray == validatingPubKey.id else {
             // PubKey bytes don't match
-            throw Errors.noPublicKey
+            throw RecordError.noPublicKey
         }
         self.peerID = validatingPubKey
 
@@ -80,12 +79,6 @@ public final class PeerRecord: Record, Hashable, Sendable {
         return try rec.serializedData().byteArray
     }
 
-    public func equals<R>(_ r: R) -> Bool where R: Record {
-        self.peerID == r.peerID
-            && self.multiaddrs == r.multiaddrs
-            && self.sequenceNumber == r.sequenceNumber
-    }
-
     public static func == (lhs: PeerRecord, rhs: PeerRecord) -> Bool {
         lhs.equals(rhs)
     }
@@ -93,10 +86,6 @@ public final class PeerRecord: Record, Hashable, Sendable {
     public func hash(into hasher: inout Hasher) {
         hasher.combine(self.peerID.id)
         hasher.combine(self.multiaddrs)
-    }
-
-    public func seal(withPrivateKey key: PeerID) throws -> Envelope {
-        try SealedEnvelope(record: self, signedWithKey: key)
     }
 
     public func unsignedPayload() throws -> [UInt8] {

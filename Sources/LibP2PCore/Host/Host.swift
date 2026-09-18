@@ -71,7 +71,8 @@ public protocol Host {
     var connManager: ConnectionManager { get }
 
     /// EventBus returns the hosts eventbus
-    var eventBus: EventBus { get }
+    /// - Note: Removed in 0.6.0, the event-bus abstraction lives at the application layer.
+    //var eventBus: EventBus { get }
 }
 
 // MARK: - Async

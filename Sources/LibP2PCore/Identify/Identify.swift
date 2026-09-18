@@ -16,14 +16,9 @@ import Multiaddr
 import NIOCore
 import PeerID
 
-public struct IdentifyMessage: Sendable {
-    var listenAddresses: [Multiaddr]
-    var observedAddress: Multiaddr?
-    var protocols: [String]
-    var publicKey: PeerID?
-    var agentVersion: String?
-    var protocolVersion: String?
-}
+/// The `IdentifyMessage` struct was removed in 0.6.0
+/// Its name shadowed the generated protobuf `IdentifyMessage` that swift-libp2p actually uses.
+// public struct IdentifyMessage: Sendable { }
 
 public protocol IdentityManager: Sendable {
 

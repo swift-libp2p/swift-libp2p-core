@@ -12,7 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-public protocol KeyRepository {
+public protocol KeyRepository: Sendable {
     func removeAllKeys(on: EventLoop?) -> EventLoopFuture<Void>
     func add(key: PeerID, on: EventLoop?) -> EventLoopFuture<Void>
     func remove(key: PeerID, on: EventLoop?) -> EventLoopFuture<Void>

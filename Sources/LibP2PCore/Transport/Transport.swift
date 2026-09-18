@@ -2,7 +2,7 @@
 //
 // This source file is part of the swift-libp2p open source project
 //
-// Copyright (c) 2022-2025 swift-libp2p project authors
+// Copyright (c) 2022-2026 swift-libp2p project authors
 // Licensed under MIT
 //
 // See LICENSE for license information
@@ -48,7 +48,7 @@ public protocol TransportManager {
 }
 
 /// This can be a placeholder for implementations to register their keys / configs on.
-public enum TransportConfig {}
+public enum TransportConfig: Sendable {}
 
 /// Transport represents any device by which you can connect to and accept
 /// connections from other peers.
@@ -103,13 +103,6 @@ public protocol TransportNetwork {
     /// transport, if any. Otherwise, it'll pick the transport registered to
     /// handle the last protocol in the multiaddr.
     func addTransport(_ t: Transport) -> EventLoopFuture<Void>
-}
-
-/// Upgrader is a multistream upgrader that can upgrade an underlying connection to a full transport connection (secure and multiplexed).
-public protocol Upgrader {
-    //func upgradeListener(_ t:Transport, listener:MAListener) -> EventLoopFuture<Listener>
-
-    //func upgrade(_ t:Transport, maconn:MAConnection, direction:Network.Direction, peer:Peer, scope:ConnectionManager.Scope) -> EventLoopFuture<CapableConnection>
 }
 
 extension Transport {

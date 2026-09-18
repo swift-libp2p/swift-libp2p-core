@@ -39,7 +39,7 @@ public protocol Record: Equatable, Sendable {
     /// - Parameters:
     ///   - withPrivateKey: The PeerID containing the private key for signing
     /// - Returns: An Envelope that contains the signed Record
-    /// - Throws: An error of type Record.Errors
+    /// - Throws: An error of type `RecordError`
     func seal(withPrivateKey: PeerID) throws -> Envelope
 }
 
@@ -60,7 +60,7 @@ public protocol Envelope: CustomStringConvertible, Sendable {
     /// - Parameters:
     ///   - record: A `Record` to sign and embed in an `Envelope`
     ///   - signedWithKey: An optional public key to verify the `Envelope`s signed `Record` against
-    /// - Throws: An error of type Record.Errors
+    /// - Throws: An error of type `RecordError`
     ///
     /// Note:
     /// ```
@@ -74,7 +74,7 @@ public protocol Envelope: CustomStringConvertible, Sendable {
     /// - Parameters:
     ///   - marshaledEnvelope: A marshaled `Envelope`
     ///   - verifiedWithPubkey: An optional public key to verify the `Envelope`s signed `Record` against
-    /// - Throws: An error of type Record.Errors
+    /// - Throws: An error of type `RecordError`
     ///
     /// Note: If this initializer doesn't fail, the Record within the envelope is verified
     init(marshaledEnvelope: [UInt8], verifiedWithPublicKey: [UInt8]?) throws
@@ -82,7 +82,8 @@ public protocol Envelope: CustomStringConvertible, Sendable {
     func marshal() throws -> [UInt8]
 }
 
-public enum Errors: Error, CustomStringConvertible, Sendable {
+/// Errors thrown while creating, sealing, or verifying `Record`s and `Envelope`s.
+public enum RecordError: Error, CustomStringConvertible, Sendable {
     case noPrivateKey
     case noPublicKey
     case emptyDomain
@@ -100,15 +101,37 @@ public enum Errors: Error, CustomStringConvertible, Sendable {
     }
 }
 
-//extension Envelope {
-//    public var description: String {
-//        return """
-//            --- 💌 Sealed Envelope 💌 ---
-//            PeerID: \(pubKey) (has pubKey: \(pubKey.keyPair?.publicKey != nil ? "true" : "false"))
-//            Payload Type: \((try? Multicodec.getCodec(bytes: self.payloadType)) ?? self.payloadType.asString(base: .base16) )
-//            Raw Payload: \(self.rawPayload.asString(base: .base16))
-//            Signature: \(self.signature.asString(base: .base16))
-//            -----------------------------
-//            """
-//    }
-//}
+@available(*, deprecated, renamed: "RecordError")
+public typealias Errors = RecordError
+
+extension Record {
+    /// The domain string of this Record's codec.
+    public var domain: String {
+        self.codec.name
+    }
+
+    /// Verifies if the other Record is identical to this one, field by field.
+    public func equals<R: Record>(_ r: R) -> Bool {
+        self.peerID == r.peerID
+            && self.multiaddrs == r.multiaddrs
+            && self.sequenceNumber == r.sequenceNumber
+    }
+
+    /// Signs / Seals this `Record` in a `SealedEnvelope` using the private key provided.
+    public func seal(withPrivateKey key: PeerID) throws -> Envelope {
+        try SealedEnvelope(record: self, signedWithKey: key)
+    }
+}
+
+extension Envelope {
+    public var description: String {
+        """
+        --- 💌 Sealed Envelope 💌 ---
+        PeerID: \(pubKey) (has pubKey: \(pubKey.keyPair?.publicKey != nil ? "true" : "false"))
+        Payload Type: \((try? Multicodec.getCodec(bytes: self.payloadType)) ?? self.payloadType.asString(base: .base16) )
+        Raw Payload: \(self.rawPayload.asString(base: .base16))
+        Signature: \(self.signature.asString(base: .base16))
+        -----------------------------
+        """
+    }
+}

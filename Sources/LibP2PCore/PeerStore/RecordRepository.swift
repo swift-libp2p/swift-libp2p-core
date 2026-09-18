@@ -12,7 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-public protocol RecordRepository {
+public protocol RecordRepository: Sendable {
     func add(record: PeerRecord, on: EventLoop?) -> EventLoopFuture<Void>
     func getRecords(forPeer peer: PeerID, on: EventLoop?) -> EventLoopFuture<[PeerRecord]>
     func getMostRecentRecord(forPeer peer: PeerID, on: EventLoop?) -> EventLoopFuture<PeerRecord?>
