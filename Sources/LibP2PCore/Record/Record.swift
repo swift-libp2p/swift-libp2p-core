@@ -12,6 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+import LibP2PCrypto
 import Multiaddr
 import PeerID
 

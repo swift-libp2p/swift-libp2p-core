@@ -12,7 +12,9 @@
 //
 //===----------------------------------------------------------------------===//
 
+import CryptoSwift
 import Foundation
+import LibP2PCrypto
 import Multicodec
 import SwiftProtobuf
 

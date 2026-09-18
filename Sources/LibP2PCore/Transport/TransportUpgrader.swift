@@ -12,7 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-import Logging
+public import Logging
 import NIOCore
 
 /// Drives protocol negotiation (e.g. multistream-select) when upgrading a raw channel into a

@@ -12,7 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-import NIOConcurrencyHelpers
+public import NIOConcurrencyHelpers
 import NIOCore
 
 public protocol Stream: AnyObject, Sendable {

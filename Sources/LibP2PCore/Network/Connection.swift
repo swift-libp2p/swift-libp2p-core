@@ -13,7 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 import Foundation
-import Logging
+public import Logging
 import Multiaddr
 import NIOConcurrencyHelpers
 import NIOCore
