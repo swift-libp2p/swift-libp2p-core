@@ -101,7 +101,6 @@ public enum RecordError: Error, CustomStringConvertible, Sendable {
     }
 }
 
-
 @available(*, deprecated, renamed: "RecordError")
 public typealias Errors = RecordError
 
