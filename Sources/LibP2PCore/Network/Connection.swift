@@ -14,7 +14,7 @@
 
 public import Foundation
 public import Logging
-import Multiaddr
+public import Multiaddr
 import NIOConcurrencyHelpers
 public import NIOCore
 public import PeerID
