@@ -118,6 +118,21 @@ struct SignedPeerRecordTests {
         #expect(compPeer.records.first?.multiaddrs == [try Multiaddr("/ip4/127.0.0.1/tcp/1111")])
     }
 
+    /// A peer first learned by its traditional (SHA-256) ID must still accept envelopes whose record
+    /// embeds its key, the two IDs are different bytes for the same peer.
+    @Test func envelopeAttachesToAPeerKnownByItsSHA256ID() throws {
+        let peer = try PeerID(.Ed25519)
+        let sha256ID = try PeerID(cid: try peer.traditionalB58String())
+        try #require(sha256ID.id != peer.id)
+        let compPeer = ComprehensivePeer(id: sha256ID)
+
+        #expect(try compPeer.insert(signedRecord: Self.envelope(peer, seq: 1), keepingMostRecent: 3))
+        #expect(compPeer.mostRecentSignedRecord != nil)
+
+        let restored = ComprehensivePeer(id: sha256ID, signedRecords: [try Self.envelope(peer, seq: 2)])
+        #expect(restored.signedRecords.count == 1)
+    }
+
     @Test func envelopeForAnotherPeerIsRejected() throws {
         let compPeer = ComprehensivePeer(id: try PeerID(.Ed25519))
         let other = try PeerID(.Ed25519)
