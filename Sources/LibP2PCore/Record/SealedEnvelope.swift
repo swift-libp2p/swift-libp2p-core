@@ -69,7 +69,7 @@ public struct SealedEnvelope: Envelope, Sendable {
         let embeddedKey = try PeerID(marshaledPublicKey: env.publicKey.serializedData())
         if let pub = pubKey {
             let expectedKey = try PeerID(marshaledPublicKey: Data(pub))
-            guard expectedKey.id == embeddedKey.id else {
+            guard expectedKey == embeddedKey else {
                 throw RecordError.invalidSignature
             }
         }

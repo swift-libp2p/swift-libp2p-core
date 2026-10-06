@@ -237,7 +237,7 @@ public final class ComprehensivePeer: Sendable {
         into state: inout State,
         keepingMostRecent limit: Int?
     ) -> Bool {
-        guard record.peerID.id == id.id else { return false }
+        guard record.peerID == id else { return false }
         let seq = record.sequenceNumber
         if let existing = state.records.first(where: { $0.sequenceNumber == seq }) {
             /// Only attach the envelope to an unsigned copy of the same record.
