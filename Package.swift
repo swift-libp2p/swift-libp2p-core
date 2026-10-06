@@ -45,6 +45,12 @@ let package = Package(
 
         // Swift Protobuf
         .package(url: "https://github.com/apple/swift-protobuf.git", .upToNextMajor(from: "1.33.3")),
+
+        // LibP2P Multihash (HashFunctions for PubSub message IDs)
+        .package(url: "https://github.com/swift-libp2p/swift-multihash.git", .upToNextMinor(from: "0.3.0")),
+
+        // Fast SHA-256 for the default PubSub message IDs
+        .package(url: "https://github.com/apple/swift-crypto.git", .upToNextMajor(from: "4.3.0")),
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
@@ -57,7 +63,9 @@ let package = Package(
                 .product(name: "Logging", package: "swift-log"),
                 .product(name: "PeerID", package: "swift-peer-id"),
                 .product(name: "Multiaddr", package: "swift-multiaddr"),
+                .product(name: "Multihash", package: "swift-multihash"),
                 .product(name: "SwiftProtobuf", package: "swift-protobuf"),
+                .product(name: "Crypto", package: "swift-crypto"),
             ],
             resources: [
                 .copy("Protobufs/Envelope.proto"),

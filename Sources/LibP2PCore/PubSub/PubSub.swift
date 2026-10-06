@@ -2,7 +2,7 @@
 //
 // This source file is part of the swift-libp2p open source project
 //
-// Copyright (c) 2022-2025 swift-libp2p project authors
+// Copyright (c) 2022-2026 swift-libp2p project authors
 // Licensed under MIT
 //
 // See LICENSE for license information
@@ -12,6 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+import Multihash
 public import NIOCore
 
 public enum PubSub {
@@ -148,33 +149,37 @@ public enum PubSub {
     }
 
     public enum MessageIDFunction: Sendable {
-        /// Calculates a Message's ID by hashing the Message Sequence Number and the Message Sender
+
+        /// Calculates a Message's ID as the SHA2-256 of the Sequence Number followed by the Sender
         case hashSequenceNumberAndFromFields
-        /// Calculates a Message's ID by hashing the Sequence Number, Sender, Data and Topic fields
+
+        /// Calculates a Message's ID as the SHA2-256 of the Sequence Number, Sender, Data and Topic fields (in that order)
         case hashEverything
+
         /// Simply concatenates the messages From data and Sequence Number (default message id function)
         case concatFromAndSequenceFields
+
         /// Specify your own custom method for generating a Message's ID
         case custom(@Sendable (_: PubSubMessage) -> Data)
 
+        /// Calculates a Message's ID as the SHA2-256 of its Data.
+        ///
+        /// The usual choice for `StrictNoSign` topics, where messages carry no sender or sequence number.
+        ///
+        /// - Note: Declared as a `.custom` function rather than a case so that adding it doesn't break
+        ///   exhaustive switches over this enum.
+        public static var contentHash: MessageIDFunction {
+            .contentHash(using: .sha2_256)
+        }
+
+        /// - Note: The hashing cases use SHA2-256, so IDs are stable across processes, platforms and peers.
+        /// - Note: Use the `using:` variants (e.g. ``hashEverything(using:)``) for a different `HashFunction`.
         public var messageIDFunction: (@Sendable (_: PubSubMessage) -> Data) {
             switch self {
             case .hashSequenceNumberAndFromFields:
-                return { message in
-                    var hasher = Hasher()
-                    hasher.combine(message.seqno)
-                    hasher.combine(message.from)
-                    return withUnsafeBytes(of: hasher.finalize().littleEndian) { Data($0) }
-                }
+                return { message in Self.sequenceNumberAndFromDigest(of: message, using: .sha2_256) }
             case .hashEverything:
-                return { message in
-                    var hasher = Hasher()
-                    hasher.combine(message.seqno)
-                    hasher.combine(message.from)
-                    hasher.combine(message.data)
-                    hasher.combine(message.topicIds)
-                    return withUnsafeBytes(of: hasher.finalize().littleEndian) { Data($0) }
-                }
+                return { message in Self.everythingDigest(of: message, using: .sha2_256) }
             case .concatFromAndSequenceFields:
                 return { message in
                     message.from + message.seqno
