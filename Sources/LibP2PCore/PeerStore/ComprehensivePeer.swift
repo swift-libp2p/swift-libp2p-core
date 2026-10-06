@@ -36,6 +36,8 @@ public final class ComprehensivePeer: Sendable {
         var protocols: Set<SemVerProtocol>
         var metadata: Metadata
         var records: Set<PeerRecord>
+        /// The signed envelopes of our PeerRecords (if it exists), keyed by sequence number.
+        var envelopes: [UInt64: SealedEnvelope]
     }
 
     private let state: NIOLockedValueBox<State>
@@ -68,17 +70,50 @@ public final class ComprehensivePeer: Sendable {
         self.state.withLockedValue { $0.records }
     }
 
+    /// The signed envelopes our records arrived in, exactly as the peer signed them, newest first.
+    ///
+    /// Records added without an envelope (e.g. unsigned or local records) have no entry here.
+    ///
+    /// - Note: Mutate through the ``insert(signedRecord:keepingMostRecent:)``.
+    public var signedRecords: [SealedEnvelope] {
+        self.state.withLockedValue { state in
+            state.envelopes.sorted { $0.key > $1.key }.map(\.value)
+        }
+    }
+
+    /// The signed envelope of the most recent record that arrived signed, if any.
+    ///
+    /// - Note: This can be older than the newest entry in ``records`` when a newer record was
+    ///   added without an envelope.
+    public var mostRecentSignedRecord: SealedEnvelope? {
+        self.state.withLockedValue { state in
+            state.envelopes.max { $0.key < $1.key }?.value
+        }
+    }
+
+    /// - Parameter signedRecords: Envelopes to restore. Each one's record is added to `records`.
+    ///   Envelopes that don't carry a valid `PeerRecord` for `id` are skipped.
     public init(
         id: PeerID,
         addresses: Set<Multiaddr> = [],
         protocols: Set<SemVerProtocol> = [],
         metadata: Metadata = [:],
-        records: Set<PeerRecord> = []
+        records: Set<PeerRecord> = [],
+        signedRecords: [SealedEnvelope] = []
     ) {
         self.id = id
-        self.state = .init(
-            State(addresses: addresses, protocols: protocols, metadata: metadata, records: records)
+        var state = State(
+            addresses: addresses,
+            protocols: protocols,
+            metadata: metadata,
+            records: records,
+            envelopes: [:]
         )
+        for envelope in signedRecords {
+            guard let record = try? PeerRecord(signedEnvelope: envelope) else { continue }
+            _ = Self.insert(record, envelope: envelope, for: id, into: &state, keepingMostRecent: nil)
+        }
+        self.state = .init(state)
     }
 
     /// Inserts an address, returning `true` if it wasn't already known.
@@ -158,27 +193,73 @@ public final class ComprehensivePeer: Sendable {
                 return false
             }
             state.records.insert(record)
-            Self.trim(&state.records, keepingMostRecent: limit)
+            Self.trim(&state, keepingMostRecent: limit)
             return state.records.contains(record)
+        }
+    }
+
+    /// Inserts the `PeerRecord` carried by `envelope` and keeps the envelope alongside it, then
+    /// keeps the most `limit` recent records.
+    ///
+    /// If a record with the same sequence number was already added without an envelope, and it
+    /// matches the envelope's record, the envelope is attached to it.
+    ///
+    /// - Returns: `true` if the record or its envelope was new. `false` if the envelope is for a
+    ///   different peer, if we already have a signed record with that sequence number, if a
+    ///   *different* record already has that sequence number, or if the record was older than the
+    ///   existing `limit` records.
+    /// - Throws: If the envelope doesn't carry a valid `PeerRecord` (see `PeerRecord(signedEnvelope:)`).
+    @discardableResult
+    public func insert(signedRecord envelope: SealedEnvelope, keepingMostRecent limit: Int) throws -> Bool {
+        let record = try PeerRecord(signedEnvelope: envelope)
+        return self.state.withLockedValue { state in
+            Self.insert(record, envelope: envelope, for: self.id, into: &state, keepingMostRecent: limit)
         }
     }
 
     /// Trims the record set down to the `limit` most recent records (by sequence number).
     public func trimRecords(keepingMostRecent limit: Int) {
-        self.state.withLockedValue { Self.trim(&$0.records, keepingMostRecent: limit) }
+        self.state.withLockedValue { Self.trim(&$0, keepingMostRecent: limit) }
     }
 
-    /// Removes all of the records associated with this peer.
+    /// Removes all of the records (and their signed envelopes) associated with this peer.
     public func removeAllRecords() {
-        self.state.withLockedValue { $0.records.removeAll() }
+        self.state.withLockedValue {
+            $0.records.removeAll()
+            $0.envelopes.removeAll()
+        }
     }
 
-    private static func trim(_ records: inout Set<PeerRecord>, keepingMostRecent limit: Int) {
+    private static func insert(
+        _ record: PeerRecord,
+        envelope: SealedEnvelope,
+        for id: PeerID,
+        into state: inout State,
+        keepingMostRecent limit: Int?
+    ) -> Bool {
+        guard record.peerID.id == id.id else { return false }
+        let seq = record.sequenceNumber
+        if let existing = state.records.first(where: { $0.sequenceNumber == seq }) {
+            /// Only attach the envelope to an unsigned copy of the same record.
+            guard state.envelopes[seq] == nil, existing.equals(record) else { return false }
+            state.envelopes[seq] = envelope
+            return true
+        }
+        state.records.insert(record)
+        state.envelopes[seq] = envelope
+        if let limit { Self.trim(&state, keepingMostRecent: limit) }
+        return state.records.contains(record)
+    }
+
+    /// Keeps the `limit` most recent records (by sequence number), and only the envelopes of the records kept.
+    private static func trim(_ state: inout State, keepingMostRecent limit: Int) {
         guard limit >= 0 else { return }
-        guard records.count > limit else { return }
-        records = Set(
-            records.sorted { $0.sequenceNumber > $1.sequenceNumber }.prefix(limit)
+        guard state.records.count > limit else { return }
+        state.records = Set(
+            state.records.sorted { $0.sequenceNumber > $1.sequenceNumber }.prefix(limit)
         )
+        let kept = Set(state.records.map(\.sequenceNumber))
+        state.envelopes = state.envelopes.filter { kept.contains($0.key) }
     }
 
     /// Returns a detached copy of this peer, taken under a single lock acquisition.
@@ -187,13 +268,13 @@ public final class ComprehensivePeer: Sendable {
     /// store's live state behind its back.
     public func copy() -> ComprehensivePeer {
         let state = self.state.withLockedValue { $0 }
-        return ComprehensivePeer(
-            id: self.id,
-            addresses: state.addresses,
-            protocols: state.protocols,
-            metadata: state.metadata,
-            records: state.records
-        )
+        return ComprehensivePeer(id: self.id, state: state)
+    }
+
+    /// Wraps an existing state as is, without re-validating its envelopes.
+    private init(id: PeerID, state: State) {
+        self.id = id
+        self.state = .init(state)
     }
 
     /// The peer's `PeerID` paired with its currently known addresses.
@@ -216,6 +297,7 @@ extension ComprehensivePeer: CustomStringConvertible {
             \t- \(state.metadata.map { "\($0.key) - \(String(data: Data($0.value), encoding: .utf8) ?? $0.value.description)" }.joined(separator: "\n\t- "))
             📜 Records:
             \t\(state.records.map { "\($0.description.replacingOccurrences(of: "\n", with: "\n\t"))" }.joined(separator: "\n\t"))
+            🔏 Signed Records: \(state.envelopes.keys.sorted(by: >).map(String.init).joined(separator: ", "))
             \(String(repeating: "-", count: header.count + 2))
             """
     }
