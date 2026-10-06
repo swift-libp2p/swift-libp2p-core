@@ -205,6 +205,7 @@ public enum PubSub {
         }
     }
 
+    @available(*, deprecated, message: "Unused and marked for removal in swift-libp2p-core 0.7.0")
     public enum MessageState {
         public enum FilterType: Sendable {
             case known
@@ -347,6 +348,7 @@ public protocol PubSubCore: EventLoopService, AnyObject, Sendable {
 //    }
 //}
 
+@available(*, deprecated, message: "Unused and marked for removal in swift-libp2p-core 0.7.0")
 public protocol PeerConnectionDelegate {
     func onPeerConnected(peerID: PeerID, stream: Stream) -> EventLoopFuture<Void>
     func onPeerDisconnected(_ peer: PeerID) -> EventLoopFuture<Void>
@@ -354,6 +356,7 @@ public protocol PeerConnectionDelegate {
 
 /// Use these protocols to abstract away the specifics for both PeerState and MessageCache
 /// Like FloodSub might have a basic implementation while GossipSub has a more complex one. Either way, PubSubBase shouldn't care.
+@available(*, deprecated, message: "Unused and marked for removal in swift-libp2p-core 0.7.0")
 public protocol PeerStateProtocol: EventLoopService, PeerConnectionDelegate {
     // Add and Remove Peers
     func addNewPeer(_ peer: PeerID, on: EventLoop?) -> EventLoopFuture<Bool>
@@ -385,6 +388,7 @@ public protocol PeerStateProtocol: EventLoopService, PeerConnectionDelegate {
 
 /// Use these protocols to abstract away the specifics for both PeerState and MessageCache
 /// Like FloodSub might have a basic implementation while GossipSub has a more complex one. Either way, PubSubBase shouldn't care.
+@available(*, deprecated, message: "Unused and marked for removal in swift-libp2p-core 0.7.0")
 public protocol MessageStateProtocol: EventLoopService {
     func put(
         messageID: Data,
@@ -461,6 +465,7 @@ extension PubSub.Subscriber {
     }
 }
 
+@available(*, deprecated, message: "Unused and marked for removal in swift-libp2p-core 0.7.0")
 extension PeerConnectionDelegate {
     public func onPeerConnected(peerID: PeerID, stream: Stream) async throws {
         try await self.onPeerConnected(peerID: peerID, stream: stream).get()
@@ -471,6 +476,7 @@ extension PeerConnectionDelegate {
     }
 }
 
+@available(*, deprecated, message: "Unused and marked for removal in swift-libp2p-core 0.7.0")
 extension PeerStateProtocol {
     public func addNewPeer(_ peer: PeerID) async throws -> Bool {
         try await self.addNewPeer(peer, on: nil).get()
@@ -529,6 +535,7 @@ extension PeerStateProtocol {
     }
 }
 
+@available(*, deprecated, message: "Unused and marked for removal in swift-libp2p-core 0.7.0")
 extension MessageStateProtocol {
     public func put(messageID: Data, message: (topic: String, data: PubSubMessage)) async throws -> Bool {
         try await self.put(messageID: messageID, message: message, on: nil).get()
