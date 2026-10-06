@@ -75,7 +75,10 @@ let package = Package(
         ),
         .testTarget(
             name: "LibP2PCoreTests",
-            dependencies: ["LibP2PCore"],
+            dependencies: [
+                "LibP2PCore",
+                .product(name: "NIOEmbedded", package: "swift-nio"),
+            ],
             swiftSettings: swiftSettings
         ),
     ]
