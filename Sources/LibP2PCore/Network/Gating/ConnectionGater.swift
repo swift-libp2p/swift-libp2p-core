@@ -47,8 +47,8 @@ public struct DialGateContext: Sendable {
     }
 }
 
-/// What we know the moment a transport hands us a connection (an inbound accept or an outbound
-/// socket-connected), before the security handshake has run.
+/// What we know the moment a transport hands us a raw connection, before the security
+/// handshake has run.
 public struct RawConnectionGateContext: Sendable {
     public let connectionID: UUID
     public let direction: ConnectionStats.Direction
@@ -110,11 +110,11 @@ public protocol ConnectionGater: Sendable {
     /// A `.deny` costs nothing on the wire and fails every dial coalesced onto this address.
     func shouldDial(_ context: DialGateContext) async -> ConnectionGateDecision
 
-    /// Consulted when a raw connection materializes, before the security handshake.
+    /// Consulted when an inbound connection is accepted, before the security handshake.
     ///
-    /// A `.deny` closes the channel before any handshake bytes are exchanged.
-    /// - For inbound connections this is the accept gate
-    /// - For outbound connections it is a last-chance gate after the socket connects.
+    /// A `.deny` closes the channel before any handshake bytes are exchanged. Outbound
+    /// connections are gated by ``shouldDial(_:)`` before their socket is even opened, so they
+    /// are not re-consulted here.
     ///
     /// - Note: This call blocks the connection from being configured, so keep it quick / lite.
     func shouldAcceptRawConnection(_ context: RawConnectionGateContext) async -> ConnectionGateDecision
