@@ -13,6 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 import Multihash
+import NIOConcurrencyHelpers
 public import NIOCore
 
 public enum PubSub {
@@ -83,13 +84,23 @@ public enum PubSub {
         }
     }
 
-    public final class SubscriptionHandler {
+    /// - Note: `@unchecked Sendable` because `topic` is immutable, `pubsub` is only assigned in `init`
+    ///   (weak loads are atomic), and `on`, the only other mutable state, is guarded by a lock.
+    public final class SubscriptionHandler: @unchecked Sendable {
         /// The topic this subscription is tied to
         private weak var pubsub: PubSubCore?
         let topic: String
 
+        private let _on = NIOLockedValueBox<((SubscriptionEvent) -> EventLoopFuture<Void>)?>(nil)
+
         /// A method that gets called when Stream Events are triggered
-        public var on: ((SubscriptionEvent) -> EventLoopFuture<Void>)?
+        ///
+        /// - Note: Events triggered before this is set are dropped. Reading it returns a snapshot, so
+        ///   invoke the returned closure rather than holding on to the handler's state.
+        public var on: ((SubscriptionEvent) -> EventLoopFuture<Void>)? {
+            get { self._on.withLockedValue { $0 } }
+            set { self._on.withLockedValue { $0 = newValue } }
+        }
 
         public init(pubSub: PubSubCore, topic: String) {
             self.pubsub = pubSub
@@ -140,10 +151,14 @@ public enum PubSub {
                 promise?.fail(Errors.subscriptionNotAvailable)
                 return
             }
-            let _ = ps.unsubscribe(topic: self.topic, on: nil)
+            guard let promise = promise else {
+                let _ = ps.unsubscribe(topic: self.topic, on: nil)
+                return
+            }
+            promise.completeWith(ps.unsubscribe(topic: self.topic, on: nil))
         }
 
-        public enum Errors: Error {
+        public enum Errors: Error, Sendable {
             case subscriptionNotAvailable
         }
     }
