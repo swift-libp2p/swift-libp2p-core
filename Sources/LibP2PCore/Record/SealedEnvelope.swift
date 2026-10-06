@@ -2,7 +2,7 @@
 //
 // This source file is part of the swift-libp2p open source project
 //
-// Copyright (c) 2022-2025 swift-libp2p project authors
+// Copyright (c) 2022-2026 swift-libp2p project authors
 // Licensed under MIT
 //
 // See LICENSE for license information
@@ -12,35 +12,29 @@
 //
 //===----------------------------------------------------------------------===//
 
-import CryptoSwift
 import Foundation
 import LibP2PCrypto
 import Multicodec
 import SwiftProtobuf
 
-// Envelope contains an arbitrary []byte payload, signed by a libp2p peer.
-//
-// Envelopes are signed in the context of a particular "domain", which is a
-// string specified when creating and verifying the envelope. You must know the
-// domain string used to produce the envelope in order to verify the signature
-// and access the payload.
+/// Envelope contains an arbitrary []byte payload, signed by a libp2p peer.
+///
+/// Envelopes are signed in the context of a particular "domain", which is a
+/// string specified when creating and verifying the envelope. You must know the
+/// domain string used to produce the envelope in order to verify the signature
+/// and access the payload.
 public struct SealedEnvelope: Envelope, Sendable {
 
-    // The public key that can be used to verify the signature and derive the peer id of the signer.
-    //PublicKey crypto.PubKey
+    /// The public key that can be used to verify the signature and derive the peer id of the signer.
     public let pubKey: PeerID
 
-    // A binary identifier that indicates what kind of data is contained in the payload.
-    // TODO(yusef): enforce multicodec prefix
-    //PayloadType []byte
+    /// A binary identifier that indicates what kind of data is contained in the payload.
     public let payloadType: [UInt8]
 
-    // The envelope payload.
-    //RawPayload []byte
+    /// The envelope payload.
     public let rawPayload: [UInt8]
 
-    // The signature of the domain string :: type hint :: payload.
-    //signature []byte
+    /// The signature of the domain string :: type hint :: payload.
     public let signature: [UInt8]
 
     /// Creates a new Signed & SealedEnvelope containing the specified Record, ready for marsahling and sending to remote peers...
@@ -55,54 +49,58 @@ public struct SealedEnvelope: Envelope, Sendable {
 
         self.rawPayload = try record.marshal()
 
-        self.signature = try privKey.sign(message: Data(record.unsignedPayload())).byteArray
+        let unsigned = Self.signingPayload(
+            domain: record.domain,
+            payloadType: self.payloadType,
+            payload: self.rawPayload
+        )
+        self.signature = try [UInt8](privKey.sign(message: Data(unsigned)))
     }
 
     /// Takes a marshalled / serialized Envelope object
+    ///
+    /// - Note: The signature is always verified against the public key embedded in the envelope.
+    /// - Parameters:
+    ///   - bytes: The Envelope to process / verify and Seal
+    ///   - pubKey: When provided, this envelope's signature must be verifiable using this pub key,
+    ///     otherwise an `.invalidSignature` error will be thrown.
     public init(marshaledEnvelope bytes: [UInt8], verifiedWithPublicKey pubKey: [UInt8]? = nil) throws {
-        //print("Attempting to instantiate a SealedEnvelope from marshaled data")
         let env = try EnvelopeMessage(serializedBytes: bytes)
-        //print("We have an Envelope, attempting to extract PublicKey")
+        let embeddedKey = try PeerID(marshaledPublicKey: env.publicKey.serializedData())
         if let pub = pubKey {
-            self.pubKey = try PeerID(marshaledPublicKey: Data(pub))
-            //guard self.pubKey.keyPair?.publicKey.data == env.publicKey.data else {
-            //    //pubkey mismatch...
-            //    print( self.pubKey.keyPair?.publicKey.data.asString(base: .base16) )
-            //    print(" =/= ")
-            //    print( env.publicKey.data.asString(base: .base16) )
-            //    throw Errors.noPublicKey
-            //}
-        } else {
-            self.pubKey = try PeerID(marshaledPublicKey: env.publicKey.serializedData())
+            let expectedKey = try PeerID(marshaledPublicKey: Data(pub))
+            guard expectedKey.id == embeddedKey.id else {
+                throw RecordError.invalidSignature
+            }
         }
+        self.pubKey = embeddedKey
 
-        //print("We have a Public Key, proceeding with signature verification")
-        self.payloadType = env.payloadType.byteArray
+        self.payloadType = [UInt8](env.payloadType)
 
-        self.rawPayload = env.payload.byteArray
+        self.rawPayload = [UInt8](env.payload)
 
-        self.signature = env.signature.byteArray
+        self.signature = [UInt8](env.signature)
 
         guard try verifySignature() else {
             throw RecordError.invalidSignature
         }
     }
 
+    /// Rebuilds the envelope from its fields.
+    ///
+    /// The signature only covers the domain, `payloadType` and `rawPayload`, and those are kept
+    /// exactly as received, so a rebuilt envelope verifies wherever the original did.
     public func marshal() throws -> [UInt8] {
         guard let pubKey = self.pubKey.keyPair?.publicKey else {
             throw RecordError.noPublicKey
         }
-        var env = EnvelopeMessage()
-        //var pub = Envelope.PublicKey()
-        //pub.type = .rsa
-        //pub.data = try pubKey.marshal()
-        //env.publicKey = pub
-        env.publicKey = try EnvelopeMessage.PublicKey(serializedBytes: pubKey.marshal())
-        //print("Envelope Marshalled PubKey:")
-        //print(pub)
-        env.payloadType = Data(self.payloadType)
-        env.payload = Data(self.rawPayload)
-        env.signature = Data(self.signature)
+
+        let env = try EnvelopeMessage.with {
+            $0.publicKey = try EnvelopeMessage.PublicKey(serializedBytes: pubKey.marshal())
+            $0.payloadType = Data(self.payloadType)
+            $0.payload = Data(self.rawPayload)
+            $0.signature = Data(self.signature)
+        }
 
         return try [UInt8](env.serializedData())
     }
@@ -113,15 +111,35 @@ public struct SealedEnvelope: Envelope, Sendable {
         }
         guard let publicKey = self.pubKey.keyPair?.publicKey else { throw RecordError.noPublicKey }
         switch type {
-        /// - Note: We check for cidv3 here due to go-libp2p's usage of [0x03, 0x01] libp2p-peer-record hardcoded prefix values...
-        case .cidv3, .libp2p_peer_record:  //PeerRecord
-            //print("Looks like we have a PeerRecord as our underlying Record Type. Attempting to unmarshal and verify signature")
-            let pRec = try PeerRecord(marshaledData: Data(self.rawPayload))
-            //print("Unmarshaled PeerRecord successfully, proceeding with signature verification")
-            return try publicKey.verify(signature: Data(self.signature), for: Data(pRec.unsignedPayload()))
+        /// We check for cidv3 here due to go-libp2p's usage of [0x03, 0x01] libp2p-peer-record hardcoded prefix values...
+        case .cidv3, .libp2p_peer_record:
+            /// Make sure the payload is a PeerRecord
+            _ = try PeerRecordMessage(serializedBytes: self.rawPayload)
+            /// Reconstruct the received data (dont re-encode it, re-encoding can drop unknown fields or normalize addresses)
+            let unsigned = Self.signingPayload(
+                domain: PeerRecord.codec.name,
+                payloadType: self.payloadType,
+                payload: self.rawPayload
+            )
+            /// Verify the signature against the received bytes verbatim
+            return try publicKey.verify(signature: Data(self.signature), for: Data(unsigned))
 
         default:
+            // TODO: Throw an unknownPayloadType(codec) instead...
             throw RecordError.emptyPayloadType
         }
+    }
+
+    /// The bytes an envelope's signature covers, per the libp2p signed-envelope spec
+    ///
+    /// ```
+    ///   varint(len(domain)) + domain
+    /// + varint(len(payload_type)) + payload_type
+    /// + varint(len(payload)) + payload
+    /// ```
+    static func signingPayload(domain: String, payloadType: [UInt8], payload: [UInt8]) -> [UInt8] {
+        domain.utf8.uVarIntLengthPrefixed
+            + payloadType.uVarIntLengthPrefixed
+            + payload.uVarIntLengthPrefixed
     }
 }
