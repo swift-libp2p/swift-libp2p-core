@@ -39,7 +39,8 @@ struct AsyncPubSubTests {
 
         let eventLoop: EventLoop = EmbeddedEventLoop()
         let state: ServiceLifecycleState = .started
-        private let subscriptions = NIOLockedValueBox<[String: [AsyncStream<PubSub.SubscriptionEvent>.Continuation]]>([:])
+        private let subscriptions = NIOLockedValueBox<[String: [AsyncStream<PubSub.SubscriptionEvent>.Continuation]]>(
+            [:])
 
         func start() throws {}
         func stop() throws {}
@@ -133,7 +134,8 @@ struct AsyncPubSubTests {
         subscription.cancel()
 
         #expect(terminated.withLockedValue { $0 })
-        if case .terminated = continuation.yield(.error(CancellationError())) {} else {
+        if case .terminated = continuation.yield(.error(CancellationError())) {
+        } else {
             Issue.record("expected yields after cancel() to be dropped")
         }
         var count = 0
@@ -152,7 +154,10 @@ struct AsyncPubSubTests {
     }
 
     @Test func boundedBufferingPolicyDropsOldestEvents() async {
-        let (subscription, continuation) = PubSub.Subscription.makeStream(topic: "news", bufferingPolicy: .bufferingNewest(2))
+        let (subscription, continuation) = PubSub.Subscription.makeStream(
+            topic: "news",
+            bufferingPolicy: .bufferingNewest(2)
+        )
         for payload in ["one", "two", "three"] {
             continuation.yield(.data(Message(data: Data(payload.utf8), topicIds: ["news"])))
         }

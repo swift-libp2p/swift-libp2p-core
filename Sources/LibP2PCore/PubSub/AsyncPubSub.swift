@@ -117,7 +117,10 @@ extension PubSub {
             topic: String,
             bufferingPolicy: AsyncStream<SubscriptionEvent>.Continuation.BufferingPolicy = .unbounded
         ) -> (subscription: Subscription, continuation: AsyncStream<SubscriptionEvent>.Continuation) {
-            let (events, continuation) = AsyncStream.makeStream(of: SubscriptionEvent.self, bufferingPolicy: bufferingPolicy)
+            let (events, continuation) = AsyncStream.makeStream(
+                of: SubscriptionEvent.self,
+                bufferingPolicy: bufferingPolicy
+            )
             let subscription = Subscription(topic: topic, events: events, onCancel: { continuation.finish() })
             return (subscription, continuation)
         }
