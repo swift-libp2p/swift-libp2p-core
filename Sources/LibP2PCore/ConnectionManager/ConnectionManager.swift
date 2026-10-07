@@ -22,13 +22,19 @@ public enum ConnectionManagerError: Error, Sendable {
 public protocol ConnectionManager: Sendable {
     func getConnections(on: EventLoop?) -> EventLoopFuture<[Connection]>
     func getConnectionsToPeer(peer: PeerID, on: EventLoop?) -> EventLoopFuture<[Connection]>
+
     /// The best existing connection to the specified peer.
     ///
     /// - Note: Fails with ``ConnectionManagerError/noConnectionToPeer`` when no connection to the
     ///   peer exists.
     func getBestConnectionForPeer(peer: PeerID, on: EventLoop?) -> EventLoopFuture<Connection>
     func connectedness(peer: PeerID, on: EventLoop?) -> EventLoopFuture<Connectedness>
-    /// Does this need a toPeer
+
+    /// Does this need a toPeer?
+    ///
+    /// - Note: Transports should route new connections through `application.connectionManager.admitConnection(:)`
+    ///   rather than calling this directly.
+    ///
     func addConnection(_ connection: Connection, on: EventLoop?) -> EventLoopFuture<Void>
     //func addConnection(_:Connection, toPeer:PeerID, on:EventLoop) -> EventLoopFuture<Void>
     func closeConnectionsToPeer(peer: PeerID, on: EventLoop?) -> EventLoopFuture<Bool>

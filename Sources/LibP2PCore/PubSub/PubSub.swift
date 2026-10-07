@@ -2,7 +2,7 @@
 //
 // This source file is part of the swift-libp2p open source project
 //
-// Copyright (c) 2022-2025 swift-libp2p project authors
+// Copyright (c) 2022-2026 swift-libp2p project authors
 // Licensed under MIT
 //
 // See LICENSE for license information
@@ -12,6 +12,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+import Multihash
+import NIOConcurrencyHelpers
 public import NIOCore
 
 public enum PubSub {
@@ -82,13 +84,23 @@ public enum PubSub {
         }
     }
 
-    public final class SubscriptionHandler {
+    /// - Note: `@unchecked Sendable` because `topic` is immutable, `pubsub` is only assigned in `init`
+    ///   (weak loads are atomic), and `on`, the only other mutable state, is guarded by a lock.
+    public final class SubscriptionHandler: @unchecked Sendable {
         /// The topic this subscription is tied to
         private weak var pubsub: PubSubCore?
         let topic: String
 
+        private let _on = NIOLockedValueBox<((SubscriptionEvent) -> EventLoopFuture<Void>)?>(nil)
+
         /// A method that gets called when Stream Events are triggered
-        public var on: ((SubscriptionEvent) -> EventLoopFuture<Void>)?
+        ///
+        /// - Note: Events triggered before this is set are dropped. Reading it returns a snapshot, so
+        ///   invoke the returned closure rather than holding on to the handler's state.
+        public var on: ((SubscriptionEvent) -> EventLoopFuture<Void>)? {
+            get { self._on.withLockedValue { $0 } }
+            set { self._on.withLockedValue { $0 = newValue } }
+        }
 
         public init(pubSub: PubSubCore, topic: String) {
             self.pubsub = pubSub
@@ -139,42 +151,50 @@ public enum PubSub {
                 promise?.fail(Errors.subscriptionNotAvailable)
                 return
             }
-            let _ = ps.unsubscribe(topic: self.topic, on: nil)
+            guard let promise = promise else {
+                let _ = ps.unsubscribe(topic: self.topic, on: nil)
+                return
+            }
+            promise.completeWith(ps.unsubscribe(topic: self.topic, on: nil))
         }
 
-        public enum Errors: Error {
+        public enum Errors: Error, Sendable {
             case subscriptionNotAvailable
         }
     }
 
     public enum MessageIDFunction: Sendable {
-        /// Calculates a Message's ID by hashing the Message Sequence Number and the Message Sender
+
+        /// Calculates a Message's ID as the SHA2-256 of the Sequence Number followed by the Sender
         case hashSequenceNumberAndFromFields
-        /// Calculates a Message's ID by hashing the Sequence Number, Sender, Data and Topic fields
+
+        /// Calculates a Message's ID as the SHA2-256 of the Sequence Number, Sender, Data and Topic fields (in that order)
         case hashEverything
+
         /// Simply concatenates the messages From data and Sequence Number (default message id function)
         case concatFromAndSequenceFields
+
         /// Specify your own custom method for generating a Message's ID
         case custom(@Sendable (_: PubSubMessage) -> Data)
 
+        /// Calculates a Message's ID as the SHA2-256 of its Data.
+        ///
+        /// The usual choice for `StrictNoSign` topics, where messages carry no sender or sequence number.
+        ///
+        /// - Note: Declared as a `.custom` function rather than a case so that adding it doesn't break
+        ///   exhaustive switches over this enum.
+        public static var contentHash: MessageIDFunction {
+            .contentHash(using: .sha2_256)
+        }
+
+        /// - Note: The hashing cases use SHA2-256, so IDs are stable across processes, platforms and peers.
+        /// - Note: Use the `using:` variants (e.g. ``hashEverything(using:)``) for a different `HashFunction`.
         public var messageIDFunction: (@Sendable (_: PubSubMessage) -> Data) {
             switch self {
             case .hashSequenceNumberAndFromFields:
-                return { message in
-                    var hasher = Hasher()
-                    hasher.combine(message.seqno)
-                    hasher.combine(message.from)
-                    return withUnsafeBytes(of: hasher.finalize().littleEndian) { Data($0) }
-                }
+                return { message in Self.sequenceNumberAndFromDigest(of: message, using: .sha2_256) }
             case .hashEverything:
-                return { message in
-                    var hasher = Hasher()
-                    hasher.combine(message.seqno)
-                    hasher.combine(message.from)
-                    hasher.combine(message.data)
-                    hasher.combine(message.topicIds)
-                    return withUnsafeBytes(of: hasher.finalize().littleEndian) { Data($0) }
-                }
+                return { message in Self.everythingDigest(of: message, using: .sha2_256) }
             case .concatFromAndSequenceFields:
                 return { message in
                     message.from + message.seqno
@@ -185,6 +205,7 @@ public enum PubSub {
         }
     }
 
+    @available(*, deprecated, message: "Unused and marked for removal in swift-libp2p-core 0.7.0")
     public enum MessageState {
         public enum FilterType: Sendable {
             case known
@@ -327,6 +348,7 @@ public protocol PubSubCore: EventLoopService, AnyObject, Sendable {
 //    }
 //}
 
+@available(*, deprecated, message: "Unused and marked for removal in swift-libp2p-core 0.7.0")
 public protocol PeerConnectionDelegate {
     func onPeerConnected(peerID: PeerID, stream: Stream) -> EventLoopFuture<Void>
     func onPeerDisconnected(_ peer: PeerID) -> EventLoopFuture<Void>
@@ -334,6 +356,7 @@ public protocol PeerConnectionDelegate {
 
 /// Use these protocols to abstract away the specifics for both PeerState and MessageCache
 /// Like FloodSub might have a basic implementation while GossipSub has a more complex one. Either way, PubSubBase shouldn't care.
+@available(*, deprecated, message: "Unused and marked for removal in swift-libp2p-core 0.7.0")
 public protocol PeerStateProtocol: EventLoopService, PeerConnectionDelegate {
     // Add and Remove Peers
     func addNewPeer(_ peer: PeerID, on: EventLoop?) -> EventLoopFuture<Bool>
@@ -365,6 +388,7 @@ public protocol PeerStateProtocol: EventLoopService, PeerConnectionDelegate {
 
 /// Use these protocols to abstract away the specifics for both PeerState and MessageCache
 /// Like FloodSub might have a basic implementation while GossipSub has a more complex one. Either way, PubSubBase shouldn't care.
+@available(*, deprecated, message: "Unused and marked for removal in swift-libp2p-core 0.7.0")
 public protocol MessageStateProtocol: EventLoopService {
     func put(
         messageID: Data,
@@ -441,6 +465,7 @@ extension PubSub.Subscriber {
     }
 }
 
+@available(*, deprecated, message: "Unused and marked for removal in swift-libp2p-core 0.7.0")
 extension PeerConnectionDelegate {
     public func onPeerConnected(peerID: PeerID, stream: Stream) async throws {
         try await self.onPeerConnected(peerID: peerID, stream: stream).get()
@@ -451,6 +476,7 @@ extension PeerConnectionDelegate {
     }
 }
 
+@available(*, deprecated, message: "Unused and marked for removal in swift-libp2p-core 0.7.0")
 extension PeerStateProtocol {
     public func addNewPeer(_ peer: PeerID) async throws -> Bool {
         try await self.addNewPeer(peer, on: nil).get()
@@ -509,6 +535,7 @@ extension PeerStateProtocol {
     }
 }
 
+@available(*, deprecated, message: "Unused and marked for removal in swift-libp2p-core 0.7.0")
 extension MessageStateProtocol {
     public func put(messageID: Data, message: (topic: String, data: PubSubMessage)) async throws -> Bool {
         try await self.put(messageID: messageID, message: message, on: nil).get()

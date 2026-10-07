@@ -70,6 +70,17 @@ public final class PeerRecord: Record, Hashable, Sendable {
         self.sequenceNumber = pr.seq
     }
 
+    /// Decodes the `PeerRecord` carried by a verified `SealedEnvelope`.
+    ///
+    /// - Throws: If the payload isn't a `PeerRecord`, or if the record names a peer other than the
+    ///   envelope's signer.
+    public convenience init(signedEnvelope envelope: SealedEnvelope) throws {
+        try self.init(
+            marshaledData: Data(envelope.rawPayload),
+            withPublicKey: Data(envelope.pubKey.marshalPublicKey())
+        )
+    }
+
     public func marshal() throws -> [UInt8] {
         var rec = PeerRecordMessage()
         rec.peerID = Data(self.peerID.id)

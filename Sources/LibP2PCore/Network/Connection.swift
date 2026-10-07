@@ -138,6 +138,11 @@ extension Connection {
     public var expectedRemotePeer: PeerID? {
         try? self.remoteAddr?.getPeerID()
     }
+
+    /// Whether the connection is accepting new streams. See ``ConnectionStats/Status/acceptsNewStreams``.
+    public var acceptsNewStreams: Bool {
+        self.status.acceptsNewStreams
+    }
 }
 
 public protocol ConnectionLifecycleDelegate: AnyObject {
@@ -174,6 +179,17 @@ public final class ConnectionStats: CustomStringConvertible, Sendable {
         case upgraded
         case closing
         case closed
+
+        /// Whether a connection in this state can still accept new streams.
+        ///
+        /// Streams requested before a connection finishes upgrading are queued until it's muxed, so this
+        /// is `true` while opening too. Once a connection is closing or closed it refuses new streams.
+        public var acceptsNewStreams: Bool {
+            switch self {
+            case .opening, .open, .upgraded: true
+            case .closing, .closed: false
+            }
+        }
     }
     public enum Direction: Sendable {
         case inbound

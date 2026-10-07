@@ -25,3 +25,18 @@ struct LibP2PCoreTests {
         //XCTAssertEqual(swift_libp2p_core().text, "Hello, World!")
     }
 }
+
+@Suite("Connection Status Tests")
+struct ConnectionStatusTests {
+    /// Connections accept new streams until they start closing.
+    @Test(arguments: [
+        (ConnectionStats.Status.opening, true),
+        (.open, true),
+        (.upgraded, true),
+        (.closing, false),
+        (.closed, false),
+    ])
+    func acceptsNewStreams(_ status: ConnectionStats.Status, _ expected: Bool) {
+        #expect(status.acceptsNewStreams == expected)
+    }
+}
